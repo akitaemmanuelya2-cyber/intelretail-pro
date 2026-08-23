@@ -320,6 +320,36 @@ export default function IntelRetailApp() {
     link.click();
   };
 
+  // Exportar Comparativa de Simulación a Excel
+  const downloadSimulationComparisonExcel = () => {
+    const currentSales = datasetTotals?.totalSales || 0;
+    const currentProfit = datasetTotals?.totalProfit || 0;
+    const currentInventoryCost = currentSales - currentProfit;
+
+    const dataMatrix = [
+      ['Métrica / Parámetro', 'Escenario Actual (Realidad)', 'Escenario A (Guardado)', 'Escenario Vivo (Proyección)'],
+      ['[ PARÁMETROS ESTRATÉGICOS ]', '', '', ''],
+      ['Ajuste de Precios (%)', '0%', scenarioA ? `${scenarioA.priceAdjustment}%` : 'N/A', `${priceAdjustment}%`],
+      [`Presupuesto Pauta (${currency})`, 0, scenarioA ? scenarioA.adBudget : 'N/A', adBudget],
+      [`Costo por Mensaje/Contacto (${currency})`, 'N/A', scenarioA ? scenarioA.leadCost : 'N/A', leadCost],
+      ['% de Cierre de Ventas', 'N/A', scenarioA ? `${scenarioA.conversionRate}%` : 'N/A', `${conversionRate}%`],
+      ['Nuevos Clientes Estimados', 'N/A', scenarioA ? scenarioA.newCustomers : 'N/A', simulationResults.newCustomers],
+      ['', '', '', ''],
+      ['[ RESULTADOS FINANCIEROS ]', '', '', ''],
+      ['Ventas Totales Brutas', currentSales, scenarioA ? scenarioA.simulatedSales : 'N/A', simulationResults.simulatedSales],
+      ['Costo de Inventario (Estimado)', currentInventoryCost, scenarioA ? (scenarioA.simulatedSales - scenarioA.simulatedProfit - scenarioA.adBudget) : 'N/A', (simulationResults.simulatedSales - simulationResults.simulatedProfit - adBudget)],
+      ['Inversión en Publicidad', 0, scenarioA ? scenarioA.adBudget : 'N/A', adBudget],
+      ['Ganancia Neta Libre', currentProfit, scenarioA ? scenarioA.simulatedProfit : 'N/A', simulationResults.simulatedProfit],
+    ];
+
+    const ws = XLSX.utils.aoa_to_sheet(dataMatrix);
+    ws['!cols'] = [{ wch: 35 }, { wch: 28 }, { wch: 28 }, { wch: 28 }];
+
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Comparativa_Simulacion');
+    XLSX.writeFile(wb, `comparativa_simulacion_${currency}.xlsx`);
+  };
+
   const expressResults = useMemo(() => {
     return calculateExpressDiagnostic({
       weeklySales,
@@ -408,11 +438,10 @@ export default function IntelRetailApp() {
     });
   }, [priceAdjustment, adBudget, leadCost, conversionRate, datasetTotals]);
 
-// Distribución dinámica de pauta con umbrales reales de mercado
+  // Distribución dinámica de pauta con umbrales reales de mercado
   const adPacingData = useMemo(() => {
     if (adBudget <= 0) return [];
     
-    // Si la moneda es COP o equivalente
     if (adBudget < 150000) {
       return [
         { name: 'Meta (Instagram/Facebook)', value: 100, color: '#E15759' },
@@ -1364,7 +1393,7 @@ export default function IntelRetailApp() {
                 </div>
               </div>
 
-              {/* Banner de Proyección de Campaña con cifras reales calculadas */}
+              {/* Banner de Proyección de Campaña */}
               <div className="p-3.5 rounded-xl bg-[#0C1519]/80 border border-sky-600/50 flex items-center space-x-2.5 text-xs text-[#F3F4F6]">
                 <Lightbulb className="w-4 h-4 text-sky-400 shrink-0" />
                 <span>
@@ -1433,6 +1462,17 @@ export default function IntelRetailApp() {
                   </BarChart>
                 </ResponsiveContainer>
               </div>
+
+              {/* Botón Descargar Comparativo */}
+              <div className="pt-3 border-t border-[#724B39]/20">
+                <button
+                  onClick={downloadSimulationComparisonExcel}
+                  className="btn-interactive py-2 px-3.5 rounded-xl text-xs font-bold text-[#CF9D7B] flex items-center space-x-2"
+                >
+                  <FileSpreadsheet className="w-4 h-4 text-[#CF9D7B]" />
+                  <span>Descargar Comparativo de Simulación (Excel)</span>
+                </button>
+              </div>
             </div>
 
             {/* 2. DISTRIBUCIÓN ESTRATÉGICA DE PAUTA */}
@@ -1494,6 +1534,7 @@ export default function IntelRetailApp() {
                 </div>
               )}
             </div>
+
             {/* 3. SUITE IA DE CREACIÓN DE CAMPAÑAS */}
             <div className="glass-card p-6 rounded-2xl space-y-4">
               <h3 className="text-xs font-bold text-[#CF9D7B] uppercase">3. Suite IA de Creación de Campañas</h3>
