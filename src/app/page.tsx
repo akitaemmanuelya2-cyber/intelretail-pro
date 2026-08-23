@@ -408,19 +408,27 @@ export default function IntelRetailApp() {
     });
   }, [priceAdjustment, adBudget, leadCost, conversionRate, datasetTotals]);
 
-  // Distribución dinámica de pauta con datos reales de mercado
+// Distribución dinámica de pauta con umbrales reales de mercado
   const adPacingData = useMemo(() => {
-    if (adBudget < 50000) {
+    if (adBudget <= 0) return [];
+    
+    // Si la moneda es COP o equivalente
+    if (adBudget < 150000) {
       return [
-        { name: 'Meta (Instagram/Facebook)', value: 70, color: '#E15759' },
-        { name: 'TikTok Ads', value: 30, color: '#00D2D3' },
+        { name: 'Meta (Instagram/Facebook)', value: 100, color: '#E15759' },
+      ];
+    } else if (adBudget < 800000) {
+      return [
+        { name: 'Meta (Instagram/Facebook)', value: 60, color: '#E15759' },
+        { name: 'TikTok Ads', value: 40, color: '#00D2D3' },
+      ];
+    } else {
+      return [
+        { name: 'Meta (Instagram/Facebook)', value: 50, color: '#E15759' },
+        { name: 'Google Ads (Búsqueda)', value: 30, color: '#4E79A7' },
+        { name: 'TikTok Ads', value: 20, color: '#00D2D3' },
       ];
     }
-    return [
-      { name: 'Meta (Instagram/Facebook)', value: 50, color: '#E15759' },
-      { name: 'Google Ads (Búsqueda)', value: 30, color: '#4E79A7' },
-      { name: 'TikTok Ads', value: 20, color: '#00D2D3' },
-    ];
   }, [adBudget]);
 
   const plannerResults = useMemo(() => {
@@ -1427,56 +1435,65 @@ export default function IntelRetailApp() {
               </div>
             </div>
 
-            {/* 2. DISTRIBUCIÓN ESTRATÉGICA DE PAUTA (RESTAURADA CON BENCHMARKS) */}
+            {/* 2. DISTRIBUCIÓN ESTRATÉGICA DE PAUTA */}
             <div className="glass-card p-6 rounded-2xl space-y-4">
               <div className="flex items-center space-x-2">
                 <PieIcon className="w-5 h-5 text-[#CF9D7B]" />
                 <h3 className="text-sm font-bold uppercase tracking-wider text-white">2. Distribución Estratégica de Pauta</h3>
               </div>
 
-              {/* Recomendación Omnicanal de Mercado */}
-              <div className="p-3.5 rounded-xl bg-[#0C1519]/80 border border-sky-600/50 flex items-center space-x-2.5 text-xs text-[#F3F4F6]">
-                <Lightbulb className="w-4 h-4 text-sky-400 shrink-0" />
+              {/* Recomendación de Mercado Contextual */}
+              <div className="p-3.5 rounded-xl bg-[#0C1519]/80 border border-[#724B39]/50 flex items-center space-x-2.5 text-xs text-[#F3F4F6]">
+                <Lightbulb className="w-4 h-4 text-[#CF9D7B] shrink-0" />
                 <span>
-                  {adBudget >= 50000
-                    ? `💡 Integral Omnicanal: Tu presupuesto de ${currencySymbol}${adBudget.toLocaleString('es-CO')} alcanza para TikTok Ads (20%), Meta (50%) y Google (30%).`
-                    : `💡 Enfoque Concentrado: Con un presupuesto inicial de ${currencySymbol}${adBudget.toLocaleString('es-CO')}, se sugiere concentrar el 70% en Meta Ads y 30% en TikTok para optimizar el alcance.`}
+                  {adBudget <= 0
+                    ? 'Sin presupuesto de pauta asignado. Configura un valor en "Presupuesto Pauta" para calcular la distribución estratégica y el alcance esperado.'
+                    : adBudget < 150000
+                    ? `💡 Estrategia de Enfoque Único: Con ${currencySymbol}${adBudget.toLocaleString('es-CO')}, se recomienda destinar el 100% a Meta Ads para concentrar el algoritmo y superar la fase de aprendizaje.`
+                    : adBudget < 800000
+                    ? `💡 Estrategia Dual: Con ${currencySymbol}${adBudget.toLocaleString('es-CO')}, distribuye 60% en Meta Ads y 40% en TikTok Ads para maximizar tráfico y generación de leads directos.`
+                    : `💡 Integral Omnicanal: Con ${currencySymbol}${adBudget.toLocaleString('es-CO')}, tu presupuesto es óptimo para operar en Meta (50%), Google Ads de Búsqueda (30%) y TikTok Ads (20%).`}
                 </span>
               </div>
 
-              {/* Gráfico Donut de Distribución */}
-              <div className="h-72 w-full flex items-center justify-center">
-                <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
-                    <Tooltip
-                      contentStyle={{ backgroundColor: '#162127', borderColor: '#724B39', borderRadius: '8px' }}
-                      formatter={(value: any, name: any) => [`${value}% del Presupuesto`, name]}
-                    />
-                    <Pie
-                      data={adPacingData}
-                      dataKey="value"
-                      nameKey="name"
-                      cx="50%"
-                      cy="48%"
-                      innerRadius={50}
-                      outerRadius={85}
-                      paddingAngle={4}
-                      label={({ name, value }) => `${String(name || '').split(' ')[0]} ${value}%`}
-                    >
-                      {adPacingData.map((entry, index) => (
-                        <Cell key={`ad-cell-${index}`} fill={entry.color} stroke="#162127" strokeWidth={2} />
-                      ))}
-                    </Pie>
-                    <Legend
-                      verticalAlign="bottom"
-                      height={36}
-                      formatter={(value) => <span className="text-xs text-[#D1D5DB]">{value}</span>}
-                    />
-                  </PieChart>
-                </ResponsiveContainer>
-              </div>
+              {/* Gráfico Donut o Estado Vacío */}
+              {adBudget > 0 ? (
+                <div className="h-72 w-full flex items-center justify-center">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Tooltip
+                        contentStyle={{ backgroundColor: '#162127', borderColor: '#724B39', borderRadius: '8px' }}
+                        formatter={(value: any, name: any) => [`${value}% del Presupuesto`, name]}
+                      />
+                      <Pie
+                        data={adPacingData}
+                        dataKey="value"
+                        nameKey="name"
+                        cx="50%"
+                        cy="48%"
+                        innerRadius={50}
+                        outerRadius={85}
+                        paddingAngle={adPacingData.length > 1 ? 4 : 0}
+                        label={({ name, value }) => `${String(name || '').split(' ')[0]} ${value}%`}
+                      >
+                        {adPacingData.map((entry, index) => (
+                          <Cell key={`ad-cell-${index}`} fill={entry.color} stroke="#162127" strokeWidth={2} />
+                        ))}
+                      </Pie>
+                      <Legend
+                        verticalAlign="bottom"
+                        height={36}
+                        formatter={(value) => <span className="text-xs text-[#D1D5DB]">{value}</span>}
+                      />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </div>
+              ) : (
+                <div className="py-12 text-center text-xs text-[#D1D5DB]/60 italic border border-dashed border-[#724B39]/30 rounded-xl">
+                  Asigna un presupuesto mayor a 0 para generar la proyección y el gráfico de distribución multicanal.
+                </div>
+              )}
             </div>
-
             {/* 3. SUITE IA DE CREACIÓN DE CAMPAÑAS */}
             <div className="glass-card p-6 rounded-2xl space-y-4">
               <h3 className="text-xs font-bold text-[#CF9D7B] uppercase">3. Suite IA de Creación de Campañas</h3>
