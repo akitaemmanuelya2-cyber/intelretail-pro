@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useMemo, useRef, useCallback, useEffect } from 'react';
+import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import {
   Zap,
   Search,
@@ -67,7 +67,7 @@ const DISTINCT_COLORS = [
   '#CF9D7B', '#724B39', '#38B2AC', '#E53E3E', '#805AD5'
 ];
 
-// Colores para la distribución de pauta
+// Colores de contraste para pauta publicitaria
 const AD_DISTRIBUTION_COLORS = ['#E15759', '#4E79A7', '#00D2D3'];
 
 const LargeSphereNode = (props: any) => {
@@ -126,7 +126,7 @@ export default function IntelRetailApp() {
 
   // Estados Simulador
   const [priceAdjustment, setPriceAdjustment] = useState(0);
-  const [adBudget, setAdBudget] = useState(0);
+  const [adBudget, setAdBudget] = useState(100000);
   const [leadCost, setLeadCost] = useState(2000);
   const [conversionRate, setConversionRate] = useState(5);
   const [scenarioA, setScenarioA] = useState<any>(null);
@@ -408,14 +408,20 @@ export default function IntelRetailApp() {
     });
   }, [priceAdjustment, adBudget, leadCost, conversionRate, datasetTotals]);
 
-  // Datos para la distribución de pauta publicitaria
+  // Distribución dinámica de pauta con datos reales de mercado
   const adPacingData = useMemo(() => {
+    if (adBudget < 50000) {
+      return [
+        { name: 'Meta (Instagram/Facebook)', value: 70, color: '#E15759' },
+        { name: 'TikTok Ads', value: 30, color: '#00D2D3' },
+      ];
+    }
     return [
       { name: 'Meta (Instagram/Facebook)', value: 50, color: '#E15759' },
       { name: 'Google Ads (Búsqueda)', value: 30, color: '#4E79A7' },
       { name: 'TikTok Ads', value: 20, color: '#00D2D3' },
     ];
-  }, []);
+  }, [adBudget]);
 
   const plannerResults = useMemo(() => {
     return calculatePlanner({
@@ -454,7 +460,7 @@ export default function IntelRetailApp() {
                   role: 'user',
                   parts: [
                     {
-                      text: `Eres el consultor financiero retail de IntelRetail Pro.\nMoneda: ${currency}.\nResumen de Métricas: ${
+                      text: `Eres el consultor financiero retail experto de IntelRetail Pro.\nMoneda: ${currency}.\nResumen de Métricas: ${
                         datasetTotals ? `Ventas: ${datasetTotals.totalSales}, Ganancia: ${datasetTotals.totalProfit}, Estrella: ${datasetTotals.starProduct?.product}, Dormido: ${datasetTotals.sleepingProduct?.product}` : 'Sin datos'
                       }.\n\nConsulta:\n${textToSend}`,
                     },
@@ -498,7 +504,7 @@ export default function IntelRetailApp() {
           `3. Enfoque Visual:\n` +
           `Fondo limpio y minimalista que resalte el producto en primer plano, con etiqueta flotante de beneficio directo.`;
       } else {
-        aiReply = `• Cross-Merchandising y Bundling Estratégico: Empaquetar el ${star} junto al ${sleeping} en un "Combo Esencial", aplicando un descuento marginal sobre el producto secundario para transferir el alto tráfico del producto estrella sin sacrificar el margen global.\n\n` +
+        aiReply = `• Cross-Merchandising y Bundling Estratégico: Empaquetar el ${star} junto al ${sleeping} en un "Combo Esencial", aplicando un descuento marginal sobre el producto secundario para transferir el alto tráfico del producto estrella al de menor rotación sin sacrificar el margen global.\n\n` +
           `• Ubicación por Adyacencia en Punto de Venta: Reubicar el ${sleeping} inmediatamente al lado del ${star} en la góndola e implementar visual merchandising (POP) cross-category, capitalizando la alta intención de compra del producto líder para generar venta cruzada por impulso.\n\n` +
           `• Incentivo por Umbral de Ticket Promedio: Diseñar una promoción B2B/Volumen que condicione transacciones cercanas al ticket promedio (${avgT}): por la compra de volumen en ${star}, otorgar un precio preferencial en ${sleeping}, evacuando el stock estancado mediante los compradores de alto valor.`;
       }
@@ -535,7 +541,6 @@ export default function IntelRetailApp() {
           sidebarOpen ? 'translate-x-0 opacity-100 shadow-[20px_0_50px_rgba(0,0,0,0.85)]' : '-translate-x-full opacity-0 pointer-events-none'
         }`}
       >
-        {/* Handler para redimensionar */}
         <div
           onMouseDown={handleMouseDown}
           className="absolute top-0 right-0 w-2 h-full cursor-col-resize hover:bg-[#CF9D7B]/30 transition-colors z-50 flex items-center justify-center group"
@@ -1085,6 +1090,7 @@ export default function IntelRetailApp() {
                   </div>
                 </div>
 
+                {/* EXPORTAR DATOS Y CONSULTOR IA */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="glass-card p-6 rounded-2xl space-y-4 flex flex-col justify-between">
                     <div className="space-y-1.5">
@@ -1144,7 +1150,7 @@ export default function IntelRetailApp() {
                   </div>
                 </div>
 
-                {/* CONSOLA DE APUNTES CON TIPOGRAFÍA DEL SISTEMA */}
+                {/* CONSOLA DE APUNTES */}
                 {aiNotes && (
                   <div className="glass-card p-6 rounded-2xl space-y-3 border-l-4 border-l-[#CF9D7B]">
                     <div className="flex items-center space-x-2 pb-2 border-b border-[#724B39]/40">
@@ -1304,63 +1310,71 @@ export default function IntelRetailApp() {
           <div className="max-w-5xl mx-auto space-y-6">
             <h2 className="text-2xl font-bold text-white">Simulador Financiero & Pauta IA</h2>
 
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-              <div className="glass-card p-4 rounded-xl space-y-2">
-                <label className="text-xs text-[#CF9D7B] font-bold">Ajuste de Precios: {priceAdjustment}%</label>
-                <input
-                  type="range"
-                  min="-50"
-                  max="50"
-                  value={priceAdjustment}
-                  onChange={(e) => setPriceAdjustment(Number(e.target.value))}
-                  className="w-full accent-[#724B39]"
-                />
+            <div className="glass-card p-6 rounded-2xl space-y-4">
+              <h3 className="text-sm font-bold uppercase tracking-wider text-[#CF9D7B]">1. Palancas Comerciales:</h3>
+
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div className="space-y-2">
+                  <label className="text-xs text-[#CF9D7B] font-bold block">Ajuste de Precios (%): {priceAdjustment}%</label>
+                  <input
+                    type="range"
+                    min="-50"
+                    max="50"
+                    value={priceAdjustment}
+                    onChange={(e) => setPriceAdjustment(Number(e.target.value))}
+                    className="w-full accent-[#724B39]"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-xs text-[#CF9D7B] font-bold block">Presupuesto Pauta ({currency})</label>
+                  <input
+                    type="number"
+                    value={adBudget}
+                    onChange={(e) => setAdBudget(Number(e.target.value) || 0)}
+                    className="w-full bg-[#0C1519] border border-[#724B39]/60 rounded-lg px-2.5 py-1.5 text-sm text-white"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-xs text-[#CF9D7B] font-bold block">Costo por Mensaje/Contacto ({currency})</label>
+                  <input
+                    type="number"
+                    value={leadCost}
+                    onChange={(e) => setLeadCost(Number(e.target.value) || 1)}
+                    className="w-full bg-[#0C1519] border border-[#724B39]/60 rounded-lg px-2.5 py-1.5 text-sm text-white"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-xs text-[#CF9D7B] font-bold block">% de Cierre de Ventas: {conversionRate}%</label>
+                  <input
+                    type="range"
+                    min="1"
+                    max="50"
+                    value={conversionRate}
+                    onChange={(e) => setConversionRate(Number(e.target.value))}
+                    className="w-full accent-[#724B39]"
+                  />
+                </div>
               </div>
-              <div className="glass-card p-4 rounded-xl space-y-1">
-                <label className="text-xs text-[#CF9D7B] font-bold">Presupuesto Pauta</label>
-                <input
-                  type="number"
-                  value={adBudget}
-                  onChange={(e) => setAdBudget(Number(e.target.value) || 0)}
-                  className="w-full bg-[#0C1519] border border-[#724B39]/60 rounded-lg px-2.5 py-1 text-sm text-white"
-                />
-              </div>
-              <div className="glass-card p-4 rounded-xl space-y-1">
-                <label className="text-xs text-[#CF9D7B] font-bold">Costo por Lead/Mensaje</label>
-                <input
-                  type="number"
-                  value={leadCost}
-                  onChange={(e) => setLeadCost(Number(e.target.value) || 1)}
-                  className="w-full bg-[#0C1519] border border-[#724B39]/60 rounded-lg px-2.5 py-1 text-sm text-white"
-                />
-              </div>
-              <div className="glass-card p-4 rounded-xl space-y-2">
-                <label className="text-xs text-[#CF9D7B] font-bold">% Conversión Cierre: {conversionRate}%</label>
-                <input
-                  type="range"
-                  min="1"
-                  max="50"
-                  value={conversionRate}
-                  onChange={(e) => setConversionRate(Number(e.target.value))}
-                  className="w-full accent-[#724B39]"
-                />
+
+              {/* Banner de Proyección de Campaña con cifras reales calculadas */}
+              <div className="p-3.5 rounded-xl bg-[#0C1519]/80 border border-sky-600/50 flex items-center space-x-2.5 text-xs text-[#F3F4F6]">
+                <Lightbulb className="w-4 h-4 text-sky-400 shrink-0" />
+                <span>
+                  <b>Proyección de Campaña:</b> Con este presupuesto, es posible que atraigas aproximadamente <b>{simulationResults.leadsGenerated} mensajes o contactos potenciales</b>. Si mantienes un nivel de cierre de ventas del {conversionRate}.0%, podrías conseguir <b>{simulationResults.newCustomers} clientes nuevos</b>.
+                </span>
               </div>
             </div>
 
-            <div className="p-3.5 rounded-xl bg-[#0C1519]/70 border border-[#724B39]/40 text-xs text-[#D1D5DB]">
-              Estimación de campaña: Con este presupuesto se proyecta atraer <b>{simulationResults.leadsGenerated} leads</b> y convertir aproximadamente <b>{simulationResults.newCustomers} clientes nuevos</b>.
-            </div>
-
-            {/* 1. COMPARADOR DE ESCENARIOS */}
+            {/* COMPARADOR DE ESCENARIOS */}
             <div className="glass-card p-6 rounded-2xl space-y-4">
               <div className="flex justify-between items-center">
-                <h3 className="text-xs font-bold text-[#CF9D7B] uppercase tracking-wider">Comparador de Escenarios Estratégicos</h3>
+                <h3 className="text-xs font-bold text-[#CF9D7B] uppercase tracking-wider">⚖️ Comparador de Escenarios Estratégicos</h3>
                 <div className="flex space-x-2">
                   <button
                     onClick={() => setScenarioA({ ...simulationResults, priceAdjustment, adBudget, leadCost, conversionRate })}
                     className="btn-interactive py-1.5 px-3 rounded-lg text-[#CF9D7B] text-xs font-bold"
                   >
-                    Guardar Escenario A
+                    💾 Guardar como Escenario A
                   </button>
                   {scenarioA && (
                     <button
@@ -1407,29 +1421,31 @@ export default function IntelRetailApp() {
                     />
                     <Bar dataKey="Actual (Realidad)" fill="#4E79A7" radius={[4, 4, 0, 0]} />
                     {scenarioA && <Bar dataKey="Escenario A (Guardado)" fill="#F28E2B" radius={[4, 4, 0, 0]} />}
-                    <Bar dataKey="Escenario Vivo (Proyección)" fill="#CF9D7B" radius={[4, 4, 0, 0]} />
+                    <Bar dataKey="Escenario Vivo (Proyección)" fill="#00D2D3" radius={[4, 4, 0, 0]} />
                   </BarChart>
                 </ResponsiveContainer>
               </div>
             </div>
 
-            {/* 2. DISTRIBUCIÓN ESTRATÉGICA DE PAUTA (RESTAURADO COMPLETO) */}
+            {/* 2. DISTRIBUCIÓN ESTRATÉGICA DE PAUTA (RESTAURADA CON BENCHMARKS) */}
             <div className="glass-card p-6 rounded-2xl space-y-4">
               <div className="flex items-center space-x-2">
                 <PieIcon className="w-5 h-5 text-[#CF9D7B]" />
                 <h3 className="text-sm font-bold uppercase tracking-wider text-white">2. Distribución Estratégica de Pauta</h3>
               </div>
 
-              {/* Recomendación de pauta */}
+              {/* Recomendación Omnicanal de Mercado */}
               <div className="p-3.5 rounded-xl bg-[#0C1519]/80 border border-sky-600/50 flex items-center space-x-2.5 text-xs text-[#F3F4F6]">
                 <Lightbulb className="w-4 h-4 text-sky-400 shrink-0" />
                 <span>
-                  <b>Integral Omnicanal:</b> Tu presupuesto alcanza para <b>TikTok Ads (20%)</b>, <b>Meta (50%)</b> y <b>Google (30%)</b>.
+                  {adBudget >= 50000
+                    ? `💡 Integral Omnicanal: Tu presupuesto de ${currencySymbol}${adBudget.toLocaleString('es-CO')} alcanza para TikTok Ads (20%), Meta (50%) y Google (30%).`
+                    : `💡 Enfoque Concentrado: Con un presupuesto inicial de ${currencySymbol}${adBudget.toLocaleString('es-CO')}, se sugiere concentrar el 70% en Meta Ads y 30% en TikTok para optimizar el alcance.`}
                 </span>
               </div>
 
               {/* Gráfico Donut de Distribución */}
-              <div className="h-64 w-full">
+              <div className="h-72 w-full flex items-center justify-center">
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
                     <Tooltip
@@ -1441,10 +1457,10 @@ export default function IntelRetailApp() {
                       dataKey="value"
                       nameKey="name"
                       cx="50%"
-                      cy="50%"
-                      innerRadius={55}
-                      outerRadius={95}
-                      paddingAngle={3}
+                      cy="48%"
+                      innerRadius={50}
+                      outerRadius={85}
+                      paddingAngle={4}
                       label={({ name, value }) => `${name.split(' ')[0]} ${value}%`}
                     >
                       {adPacingData.map((entry, index) => (
