@@ -22,6 +22,8 @@ import {
   ChevronRight,
   Atom,
   Activity,
+  HelpCircle,
+  Home,
 } from 'lucide-react';
 import {
   ResponsiveContainer,
@@ -41,13 +43,11 @@ import {
   calculatePlanner,
 } from '@/lib/calculations';
 
-interface ProductRow {
+interface RawProductRow {
   product: string;
-  sales: number;
+  rawSales: number; // Siempre guardamos la venta base original
   quantity: number;
   customer: string;
-  costPercent: number;
-  netProfit: number;
 }
 
 export default function IntelRetailApp() {
@@ -57,6 +57,7 @@ export default function IntelRetailApp() {
   const [exchangeRate, setExchangeRate] = useState(4000);
   const [applyConversion, setApplyConversion] = useState(false);
   const [requirementsOpen, setRequirementsOpen] = useState(true);
+  const [showHelpTooltip, setShowHelpTooltip] = useState(false);
 
   // Estados Módulo Express
   const [weeklySales, setWeeklySales] = useState<number[]>([
@@ -69,7 +70,7 @@ export default function IntelRetailApp() {
   const [totalCustomers, setTotalCustomers] = useState(700);
 
   // Estados Dataset / Catálogo
-  const [dataset, setDataset] = useState<ProductRow[]>([]);
+  const [rawDataset, setRawDataset] = useState<RawProductRow[]>([]);
   const [costConfig, setCostConfig] = useState<Record<string, number>>({});
   const [globalCost, setGlobalCost] = useState(70);
   const [deepAnalysisType, setDeepAnalysisType] = useState<'qty' | 'sales' | 'customer'>('qty');
@@ -99,9 +100,32 @@ export default function IntelRetailApp() {
   const [loadingAI, setLoadingAI] = useState(false);
   const [aiNotes, setAiNotes] = useState('');
 
-  const currencySymbol = '$';
+  const currencySymbol = currency === 'USD' ? 'USD $' : '$';
 
-  // 1. CARGA DE DATOS
+  // Multiplicador reactivo: si se marca convertir datos y está en COP, multiplica por exchangeRate
+  const conversionMultiplier = useMemo(() => {
+    return applyConversion ? exchangeRate : 1.0;
+  }, [applyConversion, exchangeRate]);
+
+  // Dataset recalculado en tiempo real con la tasa de conversión y los costos
+  const dataset = useMemo(() => {
+    return rawDataset.map((row) => {
+      const sales = row.rawSales * conversionMultiplier;
+      const costPercent = costConfig[row.product] !== undefined ? costConfig[row.product] : 70;
+      const costValue = sales * (costPercent / 100);
+      const netProfit = sales - costValue;
+      return {
+        product: row.product,
+        sales,
+        quantity: row.quantity,
+        customer: row.customer,
+        costPercent,
+        netProfit,
+      };
+    });
+  }, [rawDataset, conversionMultiplier, costConfig]);
+
+  // 1. CARGA DE DATOS LIMPIA
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -117,13 +141,12 @@ export default function IntelRetailApp() {
       if (rawData.length < 2) return;
 
       const headers = rawData[0].map((h: any) => String(h || '').trim().toLowerCase());
-      const colSales = headers.findIndex((h) => h.includes('venta') || h.includes('sales') || h.includes('monto'));
-      const colProd = headers.findIndex((h) => h.includes('producto') || h.includes('product') || h.includes('sku'));
-      const colQty = headers.findIndex((h) => h.includes('cantidad') || h.includes('quantity') || h.includes('cant'));
+      const colSales = headers.findIndex((h) => h.includes('venta') || h.includes('sales') || h.includes('monto') || h.includes('precio'));
+      const colProd = headers.findIndex((h) => h.includes('producto') || h.includes('product') || h.includes('sku') || h.includes('articulo'));
+      const colQty = headers.findIndex((h) => h.includes('cantidad') || h.includes('quantity') || h.includes('cant') || h.includes('und'));
       const colCust = headers.findIndex((h) => h.includes('cliente') || h.includes('customer'));
 
-      const multiplier = applyConversion ? exchangeRate : 1.0;
-      const parsedRows: ProductRow[] = [];
+      const parsedRows: RawProductRow[] = [];
       const newCosts: Record<string, number> = {};
 
       for (let i = 1; i < rawData.length; i++) {
@@ -134,7 +157,6 @@ export default function IntelRetailApp() {
         if (!prodName || prodName.toLowerCase().includes('total')) continue;
 
         const rawSales = colSales !== -1 ? parseFloat(String(row[colSales]).replace(/[^0-9.-]+/g, '')) || 0 : 0;
-        const sales = rawSales * multiplier;
         const quantity = colQty !== -1 ? parseFloat(String(row[colQty]).replace(/[^0-9.-]+/g, '')) || 1 : 1;
         const customer = colCust !== -1 && row[colCust] ? String(row[colCust]).trim() : 'Mostrador';
 
@@ -142,32 +164,18 @@ export default function IntelRetailApp() {
           newCosts[prodName] = 70;
         }
 
-        const costPercent = newCosts[prodName];
-        const costValue = sales * (costPercent / 100);
-        const netProfit = sales - costValue;
-
-        parsedRows.push({ product: prodName, sales, quantity, customer, costPercent, netProfit });
+        parsedRows.push({ product: prodName, rawSales, quantity, customer });
       }
 
       setCostConfig(newCosts);
-      setDataset(parsedRows);
+      setRawDataset(parsedRows);
     };
     reader.readAsArrayBuffer(file);
   };
 
   // 2. ACTUALIZACIÓN INDIVIDUAL DE COSTOS
   const updateProductCost = (prodName: string, newCost: number) => {
-    const updatedCosts = { ...costConfig, [prodName]: newCost };
-    setCostConfig(updatedCosts);
-    setDataset((prev) =>
-      prev.map((row) => {
-        if (row.product === prodName) {
-          const costValue = row.sales * (newCost / 100);
-          return { ...row, costPercent: newCost, netProfit: row.sales - costValue };
-        }
-        return row;
-      })
-    );
+    setCostConfig((prev) => ({ ...prev, [prodName]: newCost }));
   };
 
   // 3. APLICAR COSTO GLOBAL
@@ -175,12 +183,6 @@ export default function IntelRetailApp() {
     const updatedCosts: Record<string, number> = {};
     Object.keys(costConfig).forEach((k) => (updatedCosts[k] = globalCost));
     setCostConfig(updatedCosts);
-    setDataset((prev) =>
-      prev.map((row) => {
-        const costValue = row.sales * (globalCost / 100);
-        return { ...row, costPercent: globalCost, netProfit: row.sales - costValue };
-      })
-    );
   };
 
   // 4. DESCARGA Y CARGA DE COSTOS
@@ -213,13 +215,6 @@ export default function IntelRetailApp() {
       });
 
       setCostConfig(importedCosts);
-      setDataset((prev) =>
-        prev.map((row) => {
-          const currentC = importedCosts[row.product] !== undefined ? importedCosts[row.product] : row.costPercent;
-          const costVal = row.sales * (currentC / 100);
-          return { ...row, costPercent: currentC, netProfit: row.sales - costVal };
-        })
-      );
     };
     reader.readAsArrayBuffer(file);
   };
@@ -227,8 +222,8 @@ export default function IntelRetailApp() {
   // 5. DESCARGA PLANTILLA
   const downloadSampleTemplate = () => {
     const ws = XLSX.utils.json_to_sheet([
-      { Fecha: '01/10/2026', Producto: 'Producto A', Ventas: 100000, Cantidad: 2, Cliente: 'Mostrador' },
-      { Fecha: '02/10/2026', Producto: 'Producto B', Ventas: 250000, Cantidad: 5, Cliente: 'VIP' },
+      { Fecha: '01/10/2026', Producto: 'Chocolate Sol 500g', Ventas: 1000, Cantidad: 4, Cliente: 'Cliente A' },
+      { Fecha: '02/10/2026', Producto: 'Azúcar Incauca 1kg', Ventas: 2500, Cantidad: 8, Cliente: 'Cliente B' },
     ]);
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, 'Plantilla');
@@ -246,7 +241,7 @@ export default function IntelRetailApp() {
   const downloadAuditTextReport = () => {
     const totalSales = dataset.reduce((acc, r) => acc + r.sales, 0);
     const totalProfit = dataset.reduce((acc, r) => acc + r.netProfit, 0);
-    const text = `====================================================\nINFORME EJECUTIVO - INTELRETAIL PRO\n====================================================\n\nRESUMEN FINANCIERO GLOBAL:\n- Ventas Totales Registradas: ${currencySymbol}${totalSales.toLocaleString('es-CO', { minimumFractionDigits: 2 })}\n- Ganancia Neta Libre Estimada: ${currencySymbol}${totalProfit.toLocaleString('es-CO', { minimumFractionDigits: 2 })}\n\n----------------------------------------------------\nAPUNTES Y ESTRATEGIAS DE INTELIGENCIA ARTIFICIAL:\n----------------------------------------------------\n${aiNotes || 'Aún no has generado estrategias con la IA en esta sesión.'}\n\n====================================================\nGenerado automáticamente por tu copiloto IntelRetail Pro.`;
+    const text = `====================================================\nINFORME EJECUTIVO - INTELRETAIL PRO\n====================================================\n\nRESUMEN FINANCIERO GLOBAL:\n- Moneda: ${currency}\n- Tasa Conversión: ${applyConversion ? `Aplicada (1 USD = ${exchangeRate} COP)` : 'Desactivada'}\n- Ventas Totales Registradas: ${currencySymbol}${totalSales.toLocaleString('es-CO', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}\n- Ganancia Neta Libre Estimada: ${currencySymbol}${totalProfit.toLocaleString('es-CO', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}\n\n----------------------------------------------------\nAPUNTES Y ESTRATEGIAS DE INTELIGENCIA ARTIFICIAL:\n----------------------------------------------------\n${aiNotes || 'Aún no has generado estrategias con la IA en esta sesión.'}\n\n====================================================\nGenerado automáticamente por tu copiloto IntelRetail Pro.`;
     const blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
@@ -439,7 +434,7 @@ export default function IntelRetailApp() {
           </nav>
         </div>
 
-        {/* Divisas */}
+        {/* Módulo de Divisas y Conversión */}
         <div className="p-3.5 rounded-xl bg-[#353839]/60 border border-[#555D50]/30 space-y-2.5">
           <label className="text-xs font-bold text-[#D1D5DB] uppercase tracking-wider block">Divisa Activa</label>
           <select
@@ -464,15 +459,37 @@ export default function IntelRetailApp() {
             </div>
           )}
 
-          <label className="flex items-center space-x-2 text-[11.5px] text-[#D1D5DB] cursor-pointer pt-1">
-            <input
-              type="checkbox"
-              checked={applyConversion}
-              onChange={(e) => setApplyConversion(e.target.checked)}
-              className="accent-[#555D50] rounded"
-            />
-            <span>Convertir datos del archivo</span>
-          </label>
+          {/* Switch de Conversión con Tooltip de Ayuda */}
+          <div className="pt-1">
+            <div className="flex items-center justify-between">
+              <label className="flex items-center space-x-2 text-[11.5px] text-[#D1D5DB] cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={applyConversion}
+                  onChange={(e) => setApplyConversion(e.target.checked)}
+                  className="accent-[#555D50] w-4 h-4 rounded"
+                />
+                <span className="font-semibold text-white">🔄 Convertir datos del archivo</span>
+              </label>
+
+              {/* Botón de Ayuda (?) */}
+              <button
+                type="button"
+                onClick={() => setShowHelpTooltip(!showHelpTooltip)}
+                className="text-[#D1D5DB] hover:text-white transition-colors p-1"
+                title="Información sobre la conversión"
+              >
+                <HelpCircle className="w-4 h-4 text-[#555D50] hover:text-white" />
+              </button>
+            </div>
+
+            {/* Popover / Mensaje de Ayuda */}
+            {showHelpTooltip && (
+              <div className="mt-2 p-2.5 bg-[#0B1B0E] border border-[#555D50] rounded-lg text-[11px] text-[#D1D5DB] leading-relaxed shadow-lg">
+                💡 <b>¿Cómo funciona?</b> Activa esta casilla si tu base de datos subida contiene precios o ventas registradas en <b>dólares (USD)</b> y deseas que la plataforma las multiplique automáticamente por la <b>tasa de cambio ({exchangeRate.toLocaleString('es-CO')})</b> para visualizarlas en pesos colombianos.
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Carga de Datos */}
@@ -571,6 +588,19 @@ export default function IntelRetailApp() {
           sidebarOpen ? 'ml-80' : 'ml-0'
         }`}
       >
+        {/* BOTÓN SUPERIOR: VOLVER AL INICIO (EN TODOS LOS MÓDULOS) */}
+        {screen !== 'home' && (
+          <div className="max-w-5xl mx-auto mb-6">
+            <button
+              onClick={() => setScreen('home')}
+              className="btn-interactive inline-flex items-center space-x-2 px-3.5 py-2 rounded-xl text-xs font-bold text-[#F3F4F6]"
+            >
+              <Home className="w-4 h-4" />
+              <span>Volver al Inicio</span>
+            </button>
+          </div>
+        )}
+
         {/* LOBBY CENTRADO */}
         {screen === 'home' && (
           <div className="min-h-[85vh] flex flex-col justify-center items-center max-w-5xl mx-auto space-y-10">
@@ -653,7 +683,7 @@ export default function IntelRetailApp() {
         {/* PANTALLA: EXPRESS */}
         {screen === 'express' && (
           <div className="max-w-5xl mx-auto space-y-6">
-            <h2 className="text-2xl font-bold text-white">Diagnóstico Financiero Avanzado (8 Semanas)</h2>
+            <h2 className="text-2xl font-bold text-white">⚡ Diagnóstico Financiero Avanzado (8 Semanas)</h2>
             <p className="text-sm text-[#D1D5DB]">Ingresa los datos fraccionados de los últimos 2 meses para un cálculo preciso de tu realidad comercial.</p>
 
             <div className="glass-card p-6 rounded-2xl space-y-4">
@@ -713,21 +743,21 @@ export default function IntelRetailApp() {
               <div className="glass-card p-5 rounded-2xl border-l-4 border-l-[#555D50]">
                 <span className="text-xs font-bold text-[#D1D5DB] uppercase">UTILIDAD NETA (8 SEMANAS)</span>
                 <p className="text-2xl font-extrabold text-white mt-1">
-                  {currencySymbol}{expressResults.netProfit.toLocaleString('es-CO', { minimumFractionDigits: 2 })}
+                  {currencySymbol}{expressResults.netProfit.toLocaleString('es-CO', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                 </p>
                 <span className="text-xs text-[#D1D5DB]/80">Ganancia 100% real y libre del periodo.</span>
               </div>
               <div className="glass-card p-5 rounded-2xl border-l-4 border-l-[#36454F]">
                 <span className="text-xs font-bold text-[#D1D5DB] uppercase">PUNTO DE EQUILIBRIO BIMESTRAL</span>
                 <p className="text-2xl font-extrabold text-white mt-1">
-                  {currencySymbol}{expressResults.breakEvenPoint.toLocaleString('es-CO', { minimumFractionDigits: 2 })}
+                  {currencySymbol}{expressResults.breakEvenPoint.toLocaleString('es-CO', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                 </p>
                 <span className="text-xs text-[#D1D5DB]/80">Venta mínima en 2 meses para no tener pérdidas.</span>
               </div>
               <div className="glass-card p-5 rounded-2xl border-l-4 border-l-[#2C3539]">
                 <span className="text-xs font-bold text-[#D1D5DB] uppercase">TICKET PROMEDIO</span>
                 <p className="text-2xl font-extrabold text-white mt-1">
-                  {currencySymbol}{expressResults.avgTicket.toLocaleString('es-CO', { minimumFractionDigits: 2 })}
+                  {currencySymbol}{expressResults.avgTicket.toLocaleString('es-CO', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                 </p>
                 <span className="text-xs text-[#D1D5DB]/80">Dinero promedio por cada cliente atendido.</span>
               </div>
@@ -738,7 +768,7 @@ export default function IntelRetailApp() {
         {/* PANTALLA: AUDITORÍA */}
         {screen === 'audit' && (
           <div className="max-w-5xl mx-auto space-y-6">
-            <h2 className="text-2xl font-bold text-white">Auditoría de Catálogo y Costos</h2>
+            <h2 className="text-2xl font-bold text-white">📊 Auditoría de Catálogo y Costos</h2>
 
             {dataset.length === 0 ? (
               <div className="glass-card p-8 rounded-2xl text-center space-y-3">
@@ -820,14 +850,14 @@ export default function IntelRetailApp() {
                   <div className="glass-card p-5 rounded-2xl">
                     <span className="text-xs font-bold text-[#D1D5DB] uppercase">VENTAS TOTALES REGISTRADAS</span>
                     <p className="text-2xl font-extrabold text-white mt-1">
-                      {currencySymbol}{datasetTotals?.totalSales.toLocaleString('es-CO', { minimumFractionDigits: 2 })}
+                      {currencySymbol}{datasetTotals?.totalSales.toLocaleString('es-CO', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     </p>
                     <span className="text-xs text-[#D1D5DB]/80">Suma total de facturación en la base de datos.</span>
                   </div>
                   <div className="glass-card p-5 rounded-2xl border-l-4 border-l-[#555D50]">
                     <span className="text-xs font-bold text-[#D1D5DB] uppercase">GANANCIA NETA TOTAL</span>
                     <p className="text-2xl font-extrabold text-white mt-1">
-                      {currencySymbol}{datasetTotals?.totalProfit.toLocaleString('es-CO', { minimumFractionDigits: 2 })}
+                      {currencySymbol}{datasetTotals?.totalProfit.toLocaleString('es-CO', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     </p>
                     <span className="text-xs text-[#D1D5DB]/80">Dinero libre después de descontar el costo de producción.</span>
                   </div>
@@ -837,7 +867,7 @@ export default function IntelRetailApp() {
                   <div className="space-y-4">
                     <div className="glass-card p-5 rounded-2xl border-l-4 border-l-[#555D50]">
                       <span className="text-xs font-bold text-[#D1D5DB] uppercase">ESTRELLA (MAYOR GANANCIA NETA)</span>
-                      <p className="text-2xl font-extrabold text-white mt-1">{currencySymbol}{datasetTotals?.starProduct?.netProfit.toLocaleString('es-CO', { minimumFractionDigits: 2 })}</p>
+                      <p className="text-2xl font-extrabold text-white mt-1">{currencySymbol}{datasetTotals?.starProduct?.netProfit.toLocaleString('es-CO', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
                       <p className="text-sm font-bold text-[#F3F4F6] mt-1">{datasetTotals?.starProduct?.product}</p>
                     </div>
                     <div className="glass-card p-5 rounded-2xl">
@@ -855,7 +885,7 @@ export default function IntelRetailApp() {
                     </div>
                     <div className="glass-card p-5 rounded-2xl">
                       <span className="text-xs font-bold text-[#D1D5DB] uppercase">TICKET PROMEDIO HISTÓRICO</span>
-                      <p className="text-2xl font-extrabold text-white mt-1">{currencySymbol}{datasetTotals?.avgTicket.toLocaleString('es-CO', { minimumFractionDigits: 2 })}</p>
+                      <p className="text-2xl font-extrabold text-white mt-1">{currencySymbol}{datasetTotals?.avgTicket.toLocaleString('es-CO', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
                     </div>
                   </div>
                 </div>
@@ -957,7 +987,7 @@ export default function IntelRetailApp() {
                         <Tooltip
                           contentStyle={{ backgroundColor: '#28282B', borderColor: '#555D50', borderRadius: '8px' }}
                           formatter={(value: any) => [
-                            deepAnalysisType === 'qty' ? `${value} Unds` : `${currencySymbol}${Number(value).toLocaleString('es-CO')}`,
+                            deepAnalysisType === 'qty' ? `${value} Unds` : `${currencySymbol}${Number(value).toLocaleString('es-CO', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
                             deepAnalysisType === 'qty' ? 'Unidades' : 'Facturación',
                           ]}
                         />
@@ -979,7 +1009,7 @@ export default function IntelRetailApp() {
         {/* PANTALLA: SIMULADOR */}
         {screen === 'simulator' && (
           <div className="max-w-5xl mx-auto space-y-6">
-            <h2 className="text-2xl font-bold text-white">Simulador Financiero & Pauta IA</h2>
+            <h2 className="text-2xl font-bold text-white">🎛️ Simulador Financiero & Pauta IA</h2>
 
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
               <div className="glass-card p-4 rounded-xl space-y-2">
@@ -1120,7 +1150,12 @@ export default function IntelRetailApp() {
 
         {screen === 'planner' && (
           <div className="max-w-5xl mx-auto space-y-6">
-            <h2 className="text-2xl font-bold text-white">Planificador Estratégico de Metas</h2>
+            <div>
+              <h2 className="text-3xl font-extrabold text-white tracking-tight flex items-center space-x-2">
+                <span>🎯 Planificador Estratégico (Modo Dios)</span>
+              </h2>
+              <p className="text-sm text-[#D1D5DB] mt-1">Configura el entorno operativo de tu negocio:</p>
+            </div>
 
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
               <div className="glass-card p-4 rounded-xl space-y-1">
@@ -1133,7 +1168,7 @@ export default function IntelRetailApp() {
                 />
               </div>
               <div className="glass-card p-4 rounded-xl space-y-2">
-                <label className="text-xs text-[#D1D5DB] font-bold">Horizonte: {plannerMonths} Mes(es)</label>
+                <label className="text-xs text-[#D1D5DB] font-bold">Horizonte (Meses): {plannerMonths}</label>
                 <input
                   type="range"
                   min="1"
@@ -1153,7 +1188,7 @@ export default function IntelRetailApp() {
                 />
               </div>
               <div className="glass-card p-4 rounded-xl space-y-1">
-                <label className="text-xs text-[#D1D5DB] font-bold">Tope Capacidad Diaria</label>
+                <label className="text-xs text-[#D1D5DB] font-bold">Tope Operativo Diario</label>
                 <input
                   type="number"
                   value={maxDailyCapacity}
@@ -1163,25 +1198,54 @@ export default function IntelRetailApp() {
               </div>
             </div>
 
+            {/* Palancas Estratégicas Avanzadas */}
+            <div className="space-y-3 pt-2">
+              <h3 className="text-sm font-bold text-white uppercase tracking-wider">Palancas Estratégicas Avanzadas:</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="glass-card p-4 rounded-xl space-y-2">
+                  <label className="text-xs text-[#D1D5DB] font-bold">🔥 Multiplicador de Temporada Alta (%): {seasonality}%</label>
+                  <input
+                    type="range"
+                    min="-50"
+                    max="100"
+                    value={seasonality}
+                    onChange={(e) => setSeasonality(Number(e.target.value))}
+                    className="w-full accent-[#555D50]"
+                  />
+                </div>
+                <div className="glass-card p-4 rounded-xl space-y-2">
+                  <label className="text-xs text-[#D1D5DB] font-bold">📈 Simulador de Actualización de Tarifas (%): {rateAdjustment}%</label>
+                  <input
+                    type="range"
+                    min="-50"
+                    max="100"
+                    value={rateAdjustment}
+                    onChange={(e) => setRateAdjustment(Number(e.target.value))}
+                    className="w-full accent-[#555D50]"
+                  />
+                </div>
+              </div>
+            </div>
+
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-2">
               <div className="glass-card p-5 rounded-2xl border-l-4 border-l-[#555D50]">
                 <span className="text-xs font-bold text-[#D1D5DB] uppercase">FACTURACIÓN TOTAL REQUERIDA</span>
                 <p className="text-2xl font-extrabold text-white mt-1">
-                  {currencySymbol}{plannerResults.totalRequiredSales.toLocaleString('es-CO', { maximumFractionDigits: 0 })}
+                  {currencySymbol}{plannerResults.totalRequiredSales.toLocaleString('es-CO', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                 </p>
-                <span className="text-xs text-[#D1D5DB]/80">Meta en {plannerMonths} mes(es).</span>
+                <span className="text-xs text-[#D1D5DB]/80">Ventas necesarias estimadas en {plannerMonths} mes(es).</span>
               </div>
               <div className="glass-card p-5 rounded-2xl border-l-4 border-l-[#36454F]">
                 <span className="text-xs font-bold text-[#D1D5DB] uppercase">META DE VENTA DIARIA</span>
                 <p className="text-2xl font-extrabold text-white mt-1">
-                  {currencySymbol}{plannerResults.dailyRequiredSales.toLocaleString('es-CO', { maximumFractionDigits: 0 })}
+                  {currencySymbol}{plannerResults.dailyRequiredSales.toLocaleString('es-CO', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                 </p>
-                <span className="text-xs text-[#D1D5DB]/80">Venta promedio requerida cada día.</span>
+                <span className="text-xs text-[#D1D5DB]/80">Venta mínima promedio cada día para llegar al objetivo.</span>
               </div>
               <div className={`glass-card p-5 rounded-2xl border-l-4 ${plannerResults.capacityExceeded ? 'border-l-red-600' : 'border-l-[#555D50]'}`}>
                 <span className="text-xs font-bold uppercase text-[#D1D5DB]">CLIENTES DIARIOS REQUERIDOS</span>
                 <p className="text-2xl font-extrabold text-white mt-1">{plannerResults.dailyRequiredCustomers} Compras/Día</p>
-                <span className="text-xs text-[#D1D5DB]/80">Tope configurado: {maxDailyCapacity} diarias.</span>
+                <span className="text-xs text-[#D1D5DB]/80">Límite Operativo configurado: {maxDailyCapacity} atenciones al día.</span>
               </div>
             </div>
 
