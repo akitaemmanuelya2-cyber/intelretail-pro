@@ -1,26 +1,137 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --bg-rich: #000000;
+  --bg-obsidian: #0B1B0E;
+  --bg-raven: #28282B;
+  --bg-midnight: #2C3539;
+  --bg-onyx: #353839;
+  --bg-jet: #343434;
+  --accent-charcoal: #36454F;
+  --accent-ebony: #555D50;
+  --text-main: #F3F4F6;
+  --text-muted: #D1D5DB;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background-color: #000000;
+  color: #F3F4F6;
+  min-height: 100vh;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  overflow-x: hidden;
+}
+
+/* Glassmorphism Gravitacional */
+.glass-card {
+  background: linear-gradient(135deg, rgba(44, 53, 57, 0.45) 0%, rgba(11, 27, 14, 0.8) 100%);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  border: 1px solid rgba(85, 93, 80, 0.4);
+  border-radius: 16px;
+}
+
+/* Micro-interacción Cinética para Tarjetas del Lobby */
+.lobby-card-interactive {
+  position: relative;
+  transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+  overflow: hidden;
+}
+
+.lobby-card-interactive:hover {
+  transform: translateY(-8px) scale(1.02);
+  border-color: #555D50;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.9), 0 0 25px rgba(85, 93, 80, 0.25);
+}
+
+.lobby-card-interactive::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.07), transparent);
+  transition: 0.5s;
+}
+
+.lobby-card-interactive:hover::before {
+  left: 100%;
+}
+
+/* Botones con Impacto Cinético e Iluminación Relativista */
+.btn-interactive {
+  position: relative;
+  transition: all 0.25s cubic-bezier(0.2, 0.8, 0.2, 1);
+  overflow: hidden;
+  border: 1px solid rgba(85, 93, 80, 0.5);
+  background: linear-gradient(135deg, #2C3539 0%, #28282B 100%);
+}
+
+.btn-interactive:hover {
+  transform: translateY(-2px) scale(1.02);
+  border-color: #F3F4F6;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.7), 0 0 12px rgba(85, 93, 80, 0.4);
+}
+
+.btn-interactive:active {
+  transform: translateY(0px) scale(0.98);
+}
+
+.btn-interactive::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.12), transparent);
+  transition: 0.4s;
+}
+
+.btn-interactive:hover::after {
+  left: 100%;
+}
+
+/* Animaciones Atómicas */
+@keyframes spinClockwise {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+@keyframes spinCounterClockwise {
+  from { transform: rotate(360deg); }
+  to { transform: rotate(0deg); }
+}
+
+@keyframes quantumPulse {
+  0%, 100% { transform: scale(1); opacity: 0.8; }
+  50% { transform: scale(1.35); opacity: 1; }
+}
+
+.animate-spin-fast {
+  animation: spinClockwise 3s linear infinite;
+}
+
+.animate-spin-reverse-fast {
+  animation: spinCounterClockwise 4.5s linear infinite;
+}
+
+.animate-quantum-pulse {
+  animation: quantumPulse 2s ease-in-out infinite;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #000000;
+}
+::-webkit-scrollbar-thumb {
+  background: #2C3539;
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #555D50;
 }
