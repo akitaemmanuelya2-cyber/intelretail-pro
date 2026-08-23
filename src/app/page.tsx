@@ -62,6 +62,33 @@ const DISTINCT_COLORS = [
   '#CF9D7B', '#724B39', '#38B2AC', '#E53E3E', '#805AD5'
 ];
 
+// Componente de renderizado para esferas de alto contraste y volumen
+const LargeSphereNode = (props: any) => {
+  const { cx, cy, payload } = props;
+  if (!cx || !cy) return null;
+  return (
+    <g>
+      <circle
+        cx={cx}
+        cy={cy}
+        r={14}
+        fill={payload?.color || '#CF9D7B'}
+        stroke="#FFFFFF"
+        strokeWidth={2}
+        className="transition-transform duration-200 hover:scale-125 cursor-pointer shadow-lg"
+        style={{ filter: 'drop-shadow(0 2px 6px rgba(0,0,0,0.65))' }}
+      />
+      <circle
+        cx={cx - 3.5}
+        cy={cy - 3.5}
+        r={3.5}
+        fill="#FFFFFF"
+        fillOpacity={0.4}
+      />
+    </g>
+  );
+};
+
 export default function IntelRetailApp() {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [screen, setScreen] = useState<'home' | 'express' | 'audit' | 'simulator' | 'planner'>('home');
@@ -503,7 +530,7 @@ export default function IntelRetailApp() {
           </div>
         </div>
 
-        {/* Carga de Datos */}
+        {/* Ingesta de Datos */}
         <div className="p-3.5 rounded-xl bg-[#0C1519]/70 border border-[#724B39]/40 space-y-3">
           <span className="text-xs font-bold text-[#CF9D7B] uppercase tracking-wider block">Ingesta de Datos</span>
 
@@ -826,7 +853,7 @@ export default function IntelRetailApp() {
           </div>
         )}
 
-        {/* AUDITORÍA */}
+        {/* AUDITORÍA DE CATÁLOGO */}
         {screen === 'audit' && (
           <div className="max-w-5xl mx-auto space-y-6">
             <h2 className="text-2xl font-bold text-white">Auditoría de Catálogo y Costos</h2>
@@ -907,7 +934,6 @@ export default function IntelRetailApp() {
                   </div>
                 </div>
 
-                {/* Métricas */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="glass-card p-5 rounded-2xl">
                     <span className="text-xs font-bold text-[#CF9D7B] uppercase">VENTAS TOTALES REGISTRADAS</span>
@@ -952,7 +978,6 @@ export default function IntelRetailApp() {
                   </div>
                 </div>
 
-                {/* EXPORTAR DATOS Y CONSULTOR IA */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="glass-card p-6 rounded-2xl space-y-4 flex flex-col justify-between">
                     <div className="space-y-1.5">
@@ -1011,7 +1036,7 @@ export default function IntelRetailApp() {
                   </div>
                 </div>
 
-                {/* 3. MATRIZ BCG (CÍRCULOS +50% TAMAÑO Y LEYENDA) */}
+                {/* 3. MATRIZ BCG CON ESFERAS DE ALTO CONTRASTE */}
                 <div className="glass-card p-6 rounded-2xl space-y-4">
                   <div className="flex items-center space-x-2">
                     <Target className="w-5 h-5 text-[#CF9D7B]" />
@@ -1021,7 +1046,7 @@ export default function IntelRetailApp() {
                   <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 items-center">
                     <div className="lg:col-span-3 h-80 w-full">
                       <ResponsiveContainer width="100%" height="100%">
-                        <ScatterChart margin={{ top: 20, right: 30, bottom: 25, left: 25 }}>
+                        <ScatterChart margin={{ top: 25, right: 30, bottom: 25, left: 25 }}>
                           <XAxis
                             type="number"
                             dataKey="quantity"
@@ -1045,7 +1070,7 @@ export default function IntelRetailApp() {
                               return (
                                 <div className="p-3 bg-[#162127] border border-[#724B39] rounded-xl shadow-2xl text-xs space-y-1">
                                   <p className="font-bold text-white flex items-center space-x-1.5">
-                                    <span className="w-3 h-3 rounded-full inline-block" style={{ backgroundColor: data.color }} />
+                                    <span className="w-2.5 h-2.5 rounded-full inline-block" style={{ backgroundColor: data.color }} />
                                     <span>{data.product}</span>
                                   </p>
                                   <p className="text-[#D1D5DB]">Rotación: <b className="text-white">{data.quantity} Unds</b></p>
@@ -1055,17 +1080,11 @@ export default function IntelRetailApp() {
                               );
                             }}
                           />
-                          <Scatter name="Productos" data={datasetTotals?.groupedList || []}>
-                            {(datasetTotals?.groupedList || []).map((entry, index) => (
-                              <Cell
-                                key={`cell-${index}`}
-                                fill={entry.color}
-                                stroke="#FFFFFF"
-                                strokeWidth={1.5}
-                                r={7} // +50% tamaño (antes 4.5)
-                              />
-                            ))}
-                          </Scatter>
+                          <Scatter
+                            name="Productos"
+                            data={datasetTotals?.groupedList || []}
+                            shape={<LargeSphereNode />}
+                          />
                         </ScatterChart>
                       </ResponsiveContainer>
                     </div>
@@ -1074,7 +1093,7 @@ export default function IntelRetailApp() {
                       <span className="text-[11px] font-bold text-[#CF9D7B] uppercase tracking-wider block mb-2">PRODUCT NAME</span>
                       {(datasetTotals?.groupedList || []).map((item, idx) => (
                         <div key={idx} className="flex items-center space-x-2 text-xs py-0.5">
-                          <span className="w-3 h-3 rounded-full shrink-0 shadow-sm" style={{ backgroundColor: item.color }} />
+                          <span className="w-3.5 h-3.5 rounded-full shrink-0 shadow-sm border border-white/40" style={{ backgroundColor: item.color }} />
                           <span className="text-[#D1D5DB] truncate font-medium" title={item.product}>{item.product}</span>
                         </div>
                       ))}
@@ -1157,7 +1176,7 @@ export default function IntelRetailApp() {
           </div>
         )}
 
-        {/* SIMULADOR CON COLORES DIFERENCIADOS EN ESCENARIOS */}
+        {/* SIMULADOR FINANCIERO */}
         {screen === 'simulator' && (
           <div className="max-w-5xl mx-auto space-y-6">
             <h2 className="text-2xl font-bold text-white">Simulador Financiero & Pauta IA</h2>
@@ -1209,7 +1228,6 @@ export default function IntelRetailApp() {
               Estimación de campaña: Con este presupuesto se proyecta atraer <b>{simulationResults.leadsGenerated} leads</b> y convertir aproximadamente <b>{simulationResults.newCustomers} clientes nuevos</b>.
             </div>
 
-            {/* COMPARADOR DE ESCENARIOS MULTICOLOR */}
             <div className="glass-card p-6 rounded-2xl space-y-4">
               <div className="flex justify-between items-center">
                 <h3 className="text-xs font-bold text-[#CF9D7B] uppercase tracking-wider">Comparador de Escenarios Estratégicos</h3>
@@ -1263,7 +1281,6 @@ export default function IntelRetailApp() {
                       wrapperStyle={{ paddingTop: 10 }}
                       formatter={(value) => <span className="text-xs font-semibold text-[#D1D5DB]">{value}</span>}
                     />
-                    {/* Barras con colores identificables */}
                     <Bar dataKey="Actual (Realidad)" fill="#4E79A7" radius={[4, 4, 0, 0]} />
                     {scenarioA && <Bar dataKey="Escenario A (Guardado)" fill="#F28E2B" radius={[4, 4, 0, 0]} />}
                     <Bar dataKey="Escenario Vivo (Proyección)" fill="#CF9D7B" radius={[4, 4, 0, 0]} />
@@ -1312,7 +1329,7 @@ export default function IntelRetailApp() {
           </div>
         )}
 
-        {/* PLANIFICADOR */}
+        {/* PLANIFICADOR ESTRATÉGICO */}
         {screen === 'planner' && (
           <div className="max-w-5xl mx-auto space-y-6">
             <div>
