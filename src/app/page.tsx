@@ -30,7 +30,8 @@ import {
   FileSpreadsheet,
   FileText,
   FileEdit,
-  GripVertical,
+  PieChart as PieIcon,
+  Lightbulb,
 } from 'lucide-react';
 import {
   ResponsiveContainer,
@@ -43,6 +44,8 @@ import {
   Bar,
   Cell,
   Legend,
+  PieChart,
+  Pie,
 } from 'recharts';
 import * as XLSX from 'xlsx';
 import {
@@ -63,6 +66,9 @@ const DISTINCT_COLORS = [
   '#EDC948', '#B07AA1', '#FF9DA7', '#9C755F', '#BAB0AC',
   '#CF9D7B', '#724B39', '#38B2AC', '#E53E3E', '#805AD5'
 ];
+
+// Colores para la distribución de pauta
+const AD_DISTRIBUTION_COLORS = ['#E15759', '#4E79A7', '#00D2D3'];
 
 const LargeSphereNode = (props: any) => {
   const { cx, cy, payload } = props;
@@ -92,7 +98,7 @@ const LargeSphereNode = (props: any) => {
 
 export default function IntelRetailApp() {
   const [sidebarOpen, setSidebarOpen] = useState(true);
-  const [sidebarWidth, setSidebarWidth] = useState(320); // Ancho inicial dinámico (px)
+  const [sidebarWidth, setSidebarWidth] = useState(320);
   const [isResizing, setIsResizing] = useState(false);
 
   const [screen, setScreen] = useState<'home' | 'express' | 'audit' | 'simulator' | 'planner'>('home');
@@ -402,6 +408,15 @@ export default function IntelRetailApp() {
     });
   }, [priceAdjustment, adBudget, leadCost, conversionRate, datasetTotals]);
 
+  // Datos para la distribución de pauta publicitaria
+  const adPacingData = useMemo(() => {
+    return [
+      { name: 'Meta (Instagram/Facebook)', value: 50, color: '#E15759' },
+      { name: 'Google Ads (Búsqueda)', value: 30, color: '#4E79A7' },
+      { name: 'TikTok Ads', value: 20, color: '#00D2D3' },
+    ];
+  }, []);
+
   const plannerResults = useMemo(() => {
     return calculatePlanner({
       targetProfit,
@@ -501,7 +516,7 @@ export default function IntelRetailApp() {
 
   return (
     <div className="flex min-h-screen bg-transparent text-[#F3F4F6] relative overflow-hidden select-none">
-      {/* BOTÓN COLAPSADOR MINIMALISTA Y RESPONSIVO */}
+      {/* BOTÓN COLAPSADOR MINIMALISTA */}
       <button
         onClick={() => setSidebarOpen(!sidebarOpen)}
         style={{ left: sidebarOpen ? `${sidebarWidth - 12}px` : '10px' }}
@@ -520,7 +535,7 @@ export default function IntelRetailApp() {
           sidebarOpen ? 'translate-x-0 opacity-100 shadow-[20px_0_50px_rgba(0,0,0,0.85)]' : '-translate-x-full opacity-0 pointer-events-none'
         }`}
       >
-        {/* Manilla / Handler para estirar o encoger el sidebar */}
+        {/* Handler para redimensionar */}
         <div
           onMouseDown={handleMouseDown}
           className="absolute top-0 right-0 w-2 h-full cursor-col-resize hover:bg-[#CF9D7B]/30 transition-colors z-50 flex items-center justify-center group"
@@ -672,7 +687,7 @@ export default function IntelRetailApp() {
           )}
         </div>
 
-        {/* Chat IA Lateral */}
+        {/* Chat IA */}
         <div className="flex-1 flex flex-col min-h-[220px] p-3 rounded-xl bg-[#0C1519]/70 border border-[#724B39]/40">
           <div className="flex items-center space-x-2 pb-2 border-b border-[#724B39]/40 mb-2">
             <Bot className="w-4 h-4 text-[#CF9D7B]" />
@@ -716,7 +731,7 @@ export default function IntelRetailApp() {
         </div>
       </aside>
 
-      {/* ÁREA DE CONTENIDO PRINCIPAL */}
+      {/* ÁREA DE CONTENIDO */}
       <main
         style={{ marginLeft: sidebarOpen ? `${sidebarWidth}px` : '0px' }}
         className="flex-1 min-h-screen p-8 lg:p-12 overflow-y-auto transition-all duration-300 ease-in-out select-text"
@@ -1070,7 +1085,6 @@ export default function IntelRetailApp() {
                   </div>
                 </div>
 
-                {/* EXPORTAR DATOS Y CONSULTOR IA */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="glass-card p-6 rounded-2xl space-y-4 flex flex-col justify-between">
                     <div className="space-y-1.5">
@@ -1285,7 +1299,7 @@ export default function IntelRetailApp() {
           </div>
         )}
 
-        {/* SIMULADOR FINANCIERO */}
+        {/* SIMULADOR FINANCIERO & PAUTA IA */}
         {screen === 'simulator' && (
           <div className="max-w-5xl mx-auto space-y-6">
             <h2 className="text-2xl font-bold text-white">Simulador Financiero & Pauta IA</h2>
@@ -1337,6 +1351,7 @@ export default function IntelRetailApp() {
               Estimación de campaña: Con este presupuesto se proyecta atraer <b>{simulationResults.leadsGenerated} leads</b> y convertir aproximadamente <b>{simulationResults.newCustomers} clientes nuevos</b>.
             </div>
 
+            {/* 1. COMPARADOR DE ESCENARIOS */}
             <div className="glass-card p-6 rounded-2xl space-y-4">
               <div className="flex justify-between items-center">
                 <h3 className="text-xs font-bold text-[#CF9D7B] uppercase tracking-wider">Comparador de Escenarios Estratégicos</h3>
@@ -1398,8 +1413,57 @@ export default function IntelRetailApp() {
               </div>
             </div>
 
+            {/* 2. DISTRIBUCIÓN ESTRATÉGICA DE PAUTA (RESTAURADO COMPLETO) */}
             <div className="glass-card p-6 rounded-2xl space-y-4">
-              <h3 className="text-xs font-bold text-[#CF9D7B] uppercase">Suite IA de Creación de Campañas</h3>
+              <div className="flex items-center space-x-2">
+                <PieIcon className="w-5 h-5 text-[#CF9D7B]" />
+                <h3 className="text-sm font-bold uppercase tracking-wider text-white">2. Distribución Estratégica de Pauta</h3>
+              </div>
+
+              {/* Recomendación de pauta */}
+              <div className="p-3.5 rounded-xl bg-[#0C1519]/80 border border-sky-600/50 flex items-center space-x-2.5 text-xs text-[#F3F4F6]">
+                <Lightbulb className="w-4 h-4 text-sky-400 shrink-0" />
+                <span>
+                  <b>Integral Omnicanal:</b> Tu presupuesto alcanza para <b>TikTok Ads (20%)</b>, <b>Meta (50%)</b> y <b>Google (30%)</b>.
+                </span>
+              </div>
+
+              {/* Gráfico Donut de Distribución */}
+              <div className="h-64 w-full">
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Tooltip
+                      contentStyle={{ backgroundColor: '#162127', borderColor: '#724B39', borderRadius: '8px' }}
+                      formatter={(value: any, name: any) => [`${value}% del Presupuesto`, name]}
+                    />
+                    <Pie
+                      data={adPacingData}
+                      dataKey="value"
+                      nameKey="name"
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={55}
+                      outerRadius={95}
+                      paddingAngle={3}
+                      label={({ name, value }) => `${name.split(' ')[0]} ${value}%`}
+                    >
+                      {adPacingData.map((entry, index) => (
+                        <Cell key={`ad-cell-${index}`} fill={entry.color} stroke="#162127" strokeWidth={2} />
+                      ))}
+                    </Pie>
+                    <Legend
+                      verticalAlign="bottom"
+                      height={36}
+                      formatter={(value) => <span className="text-xs text-[#D1D5DB]">{value}</span>}
+                    />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+
+            {/* 3. SUITE IA DE CREACIÓN DE CAMPAÑAS */}
+            <div className="glass-card p-6 rounded-2xl space-y-4">
+              <h3 className="text-xs font-bold text-[#CF9D7B] uppercase">3. Suite IA de Creación de Campañas</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="text-xs text-[#D1D5DB] block mb-1">Producto o Servicio a Promocionar</label>
