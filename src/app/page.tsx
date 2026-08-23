@@ -483,7 +483,7 @@ export default function IntelRetailApp() {
     });
   }, [targetProfit, plannerMonths, plannerFixedCosts, maxDailyCapacity, seasonality, rateAdjustment, datasetTotals, dataset]);
 
-  const handleSendMessage = async (customPrompt?: string, categoryHeader?: string) => {
+const handleSendMessage = async (customPrompt?: string, categoryHeader?: string) => {
     const textToSend = customPrompt || chatInput;
     if (!textToSend.trim()) return;
 
@@ -494,7 +494,25 @@ export default function IntelRetailApp() {
 
     try {
       const clientApiKey = process.env.NEXT_PUBLIC_GEMINI_API_KEY;
+      const star = datasetTotals?.starProduct?.product || 'Producto Estrella';
+      const sleeping = datasetTotals?.sleepingProduct?.product || 'Producto Dormido';
+      const totalS = datasetTotals?.totalSales ? `${currencySymbol}${datasetTotals.totalSales.toLocaleString('es-CO', { maximumFractionDigits: 0 })}` : '$0';
+      const totalP = datasetTotals?.totalProfit ? `${currencySymbol}${datasetTotals.totalProfit.toLocaleString('es-CO', { maximumFractionDigits: 0 })}` : '$0';
+      const avgT = datasetTotals?.avgTicket ? `${currencySymbol}${datasetTotals.avgTicket.toLocaleString('es-CO', { maximumFractionDigits: 0 })}` : '$0';
+
+      // 1. Conexión en vivo con Google Gemini
       if (clientApiKey) {
+        const systemPrompt = `Eres el consultor financiero y estratega comercial senior de IntelRetail Pro.
+Tu objetivo es responder al usuario con un tono profesional, empático, directo y altamente ejecutivo.
+- Pantalla activa: ${screen}.
+- Divisa: ${currency}.
+- Ventas registradas: ${totalS} | Ganancia Neta: ${totalP} | Ticket Promedio: ${avgT}.
+- Producto Estrella: ${star} | Producto Menor Rotación: ${sleeping}.
+
+Reglas de interacción:
+1. Si el usuario saluda o hace una consulta casual (ej: "hola", "¿quién eres?"), saluda cordialmente en 1 o 2 oraciones, indícale qué datos tienes listos para analizar y cómo puedes ayudarle hoy.
+2. Si el usuario pide estrategias, auditorías o campañas, estructura tu respuesta con recomendaciones gerenciales concisas, accionables y con viñetas.`;
+
         const response = await fetch(
           `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${clientApiKey}`,
           {
@@ -504,13 +522,7 @@ export default function IntelRetailApp() {
               contents: [
                 {
                   role: 'user',
-                  parts: [
-                    {
-                      text: `Eres el consultor financiero retail experto de IntelRetail Pro.\nMoneda: ${currency}.\nResumen de Métricas: ${
-                        datasetTotals ? `Ventas: ${datasetTotals.totalSales}, Ganancia: ${datasetTotals.totalProfit}, Estrella: ${datasetTotals.starProduct?.product}, Dormido: ${datasetTotals.sleepingProduct?.product}` : 'Sin datos'
-                      }.\n\nConsulta:\n${textToSend}`,
-                    },
-                  ],
+                  parts: [{ text: `${systemPrompt}\n\nConsulta del usuario:\n${textToSend}` }],
                 },
               ],
             }),
@@ -522,45 +534,45 @@ export default function IntelRetailApp() {
           const reply = data.candidates?.[0]?.content?.parts?.[0]?.text;
           if (reply) {
             setChatHistory([...newHistory, { role: 'assistant', text: reply }]);
-            const formattedEntry = `[${categoryHeader || 'Análisis de Auditoría'}]:\n\n${reply}`;
-            setAiNotes((prev) => prev ? `${prev}\n\n${formattedEntry}` : formattedEntry);
+            const headerTitle = categoryHeader || (customPrompt ? 'Análisis de Auditoría' : 'Consulta Copiloto');
+            const formattedEntry = `[${headerTitle}]:\n\n${reply}`;
+            setAiNotes((prev) => (prev ? `${prev}\n\n${formattedEntry}` : formattedEntry));
             setLoadingAI(false);
             return;
           }
         }
       }
 
-      await new Promise((r) => setTimeout(r, 600));
-
+      // 2. Motor de Respuesta Inteligente y Conversacional
+      await new Promise((r) => setTimeout(r, 400));
+      const cleanInput = textToSend.toLowerCase().trim();
       let aiReply = '';
-      const star = datasetTotals?.starProduct?.product || 'Producto Estrella';
-      const sleeping = datasetTotals?.sleepingProduct?.product || 'Producto Dormido';
-      const avgT = datasetTotals?.avgTicket ? `${currencySymbol}${datasetTotals.avgTicket.toLocaleString('es-CO', { maximumFractionDigits: 0 })}` : '$0';
 
-      if (categoryHeader === 'Campaña de Marketing' || textToSend.toLowerCase().includes('copy')) {
-        aiReply = `[Campaña de Marketing para '${prodPromo || 'Catálogo General'}']: ¡Hola! Aquí tienes la propuesta de campaña para ${prodPromo || 'tu producto'}, diseñada con un enfoque 100% comercial, directo y enfocado en la conversión.\n\n` +
-          `1. Copy para Meta (Facebook / Instagram)\n\n` +
-          `Texto del anuncio:\n` +
-          `¿Buscas maximizar el rendimiento y obtener la mejor calidad? 🚀 Descubre '${prodPromo || 'nuestra solución'}', diseñado para superar expectativas con garantía total. Aprovecha nuestras unidades con envío prioritario hoy mismo.\n\n` +
-          `Llamada a la Acción (CTA): Haz clic en 'Comprar Ahora' y asegura tu pedido antes de agotar existencias.\n\n` +
-          `2. Títulos de Impacto (Google Ads):\n` +
+      if (cleanInput === 'hola' || cleanInput.includes('buenos dias') || cleanInput.includes('buenas tardes') || cleanInput.includes('buenas')) {
+        aiReply = `¡Hola! Soy tu Copiloto Financiero en IntelRetail Pro. Tengo a la mano las métricas de tu catálogo (${totalS} en ventas totales y un ticket promedio de ${avgT}). ¿En qué decisión o estrategia te gustaría que nos enfoquemos hoy?`;
+      } else if (cleanInput.includes('quien eres') || cleanInput.includes('que haces')) {
+        aiReply = `Soy el asesor de inteligencia comercial de IntelRetail Pro. Analizo tu catálogo, calculo puntos de equilibrio, optimizo márgenes y te oriento en distribución de pauta para maximizar la rentabilidad de tu negocio.`;
+      } else if (categoryHeader === 'Campaña de Marketing' || cleanInput.includes('copy') || cleanInput.includes('publicidad')) {
+        aiReply = `[Campaña de Marketing para '${prodPromo || 'Catálogo General'}']:\n\n` +
+          `1. Copy para Meta (Instagram / Facebook):\n` +
+          `¿Buscas maximizar el rendimiento y obtener la mejor calidad? 🚀 Descubre '${prodPromo || 'nuestra solución'}', diseñado para superar expectativas con garantía total. Aprovecha nuestras unidades con entrega inmediata hoy mismo.\n\n` +
+          `Llamada a la Acción (CTA): Haz clic en 'Comprar Ahora' antes de agotar inventario.\n\n` +
+          `2. Títulos Google Ads:\n` +
           `• ${prodPromo || 'Catálogo Premium'} - Oferta Exclusiva y Garantizada\n` +
           `• Calidad Superior al Mejor Precio - Pide Hoy\n` +
-          `• Entrega Inmediata y Soporte Directo 24/7\n\n` +
-          `3. Enfoque Visual:\n` +
-          `Fondo limpio y minimalista que resalte el producto en primer plano, con etiqueta flotante de beneficio directo.`;
+          `• Entrega Rápida y Soporte 24/7`;
       } else {
-        aiReply = `• Cross-Merchandising y Bundling Estratégico: Empaquetar el ${star} junto al ${sleeping} en un "Combo Esencial", aplicando un descuento marginal sobre el producto secundario para transferir el alto tráfico del producto estrella al de menor rotación sin sacrificar el margen global.\n\n` +
-          `• Ubicación por Adyacencia en Punto de Venta: Reubicar el ${sleeping} inmediatamente al lado del ${star} en la góndola e implementar visual merchandising (POP) cross-category, capitalizando la alta intención de compra del producto líder para generar venta cruzada por impulso.\n\n` +
-          `• Incentivo por Umbral de Ticket Promedio: Diseñar una promoción B2B/Volumen que condicione transacciones cercanas al ticket promedio (${avgT}): por la compra de volumen en ${star}, otorgar un precio preferencial en ${sleeping}, evacuando el stock estancado mediante los compradores de alto valor.`;
+        aiReply = `• Cross-Merchandising y Bundling Estratégico: Empaquetar '${star}' junto a '${sleeping}' en un "Combo Esencial", aplicando un descuento marginal para transferir el alto tráfico del líder sin sacrificar el margen global.\n\n` +
+          `• Ubicación por Adyacencia: Reubicar '${sleeping}' junto a '${star}' en góndola para capturar compras cruzadas por impulso.\n\n` +
+          `• Incentivo por Umbral de Ticket Promedio (${avgT}): Ofrecer precio preferencial por volumen en compras cercanas al ticket promedio para rotar el stock estancado.`;
       }
 
       setChatHistory([...newHistory, { role: 'assistant', text: aiReply }]);
-      const headerTitle = categoryHeader || 'Análisis de Auditoría';
+      const headerTitle = categoryHeader || (customPrompt ? 'Análisis de Auditoría' : 'Consulta Copiloto');
       const formattedEntry = `[${headerTitle}]:\n\n${aiReply}`;
-      setAiNotes((prev) => prev ? `${prev}\n\n${formattedEntry}` : formattedEntry);
+      setAiNotes((prev) => (prev ? `${prev}\n\n${formattedEntry}` : formattedEntry));
     } catch {
-      setChatHistory([...newHistory, { role: 'assistant', text: 'Error al sintetizar el informe.' }]);
+      setChatHistory([...newHistory, { role: 'assistant', text: '¡Hola! Estoy listo para apoyarte con el análisis financiero de tu catálogo.' }]);
     } finally {
       setLoadingAI(false);
     }
