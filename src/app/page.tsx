@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef, useCallback, useEffect } from 'react';
 import {
   Zap,
   Search,
@@ -30,6 +30,7 @@ import {
   FileSpreadsheet,
   FileText,
   FileEdit,
+  GripVertical,
 } from 'lucide-react';
 import {
   ResponsiveContainer,
@@ -91,6 +92,9 @@ const LargeSphereNode = (props: any) => {
 
 export default function IntelRetailApp() {
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [sidebarWidth, setSidebarWidth] = useState(320); // Ancho inicial dinámico (px)
+  const [isResizing, setIsResizing] = useState(false);
+
   const [screen, setScreen] = useState<'home' | 'express' | 'audit' | 'simulator' | 'planner'>('home');
   const [currency, setCurrency] = useState<'COP' | 'USD' | 'MXN'>('COP');
   const [exchangeRate, setExchangeRate] = useState(4000);
@@ -140,6 +144,35 @@ export default function IntelRetailApp() {
   const [aiNotes, setAiNotes] = useState<string>('');
 
   const currencySymbol = currency === 'USD' ? 'USD $' : '$';
+
+  // Lógica de Redimensionamiento del Sidebar
+  const handleMouseDown = useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+    setIsResizing(true);
+  }, []);
+
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      if (!isResizing) return;
+      let newWidth = e.clientX;
+      if (newWidth < 260) newWidth = 260;
+      if (newWidth > 520) newWidth = 520;
+      setSidebarWidth(newWidth);
+    };
+
+    const handleMouseUp = () => {
+      setIsResizing(false);
+    };
+
+    if (isResizing) {
+      window.addEventListener('mousemove', handleMouseMove);
+      window.addEventListener('mouseup', handleMouseUp);
+    }
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, [isResizing]);
 
   const conversionMultiplier = useMemo(() => {
     return applyConversion ? exchangeRate : 1.0;
@@ -383,7 +416,6 @@ export default function IntelRetailApp() {
     });
   }, [targetProfit, plannerMonths, plannerFixedCosts, maxDailyCapacity, seasonality, rateAdjustment, datasetTotals, dataset]);
 
-  // Motor Estratégico IA (Escritura en Consola de Apuntes Principal)
   const handleSendMessage = async (customPrompt?: string, categoryHeader?: string) => {
     const textToSend = customPrompt || chatInput;
     if (!textToSend.trim()) return;
@@ -431,15 +463,12 @@ export default function IntelRetailApp() {
         }
       }
 
-      // Inferencia Estratégica Retail Autónoma en Español
       await new Promise((r) => setTimeout(r, 600));
 
       let aiReply = '';
       const star = datasetTotals?.starProduct?.product || 'Producto Estrella';
       const sleeping = datasetTotals?.sleepingProduct?.product || 'Producto Dormido';
       const avgT = datasetTotals?.avgTicket ? `${currencySymbol}${datasetTotals.avgTicket.toLocaleString('es-CO', { maximumFractionDigits: 0 })}` : '$0';
-      const totalS = datasetTotals?.totalSales ? `${currencySymbol}${datasetTotals.totalSales.toLocaleString('es-CO', { maximumFractionDigits: 0 })}` : '$0';
-      const totalP = datasetTotals?.totalProfit ? `${currencySymbol}${datasetTotals.totalProfit.toLocaleString('es-CO', { maximumFractionDigits: 0 })}` : '$0';
 
       if (categoryHeader === 'Campaña de Marketing' || textToSend.toLowerCase().includes('copy')) {
         aiReply = `[Campaña de Marketing para '${prodPromo || 'Catálogo General'}']: ¡Hola! Aquí tienes la propuesta de campaña para ${prodPromo || 'tu producto'}, diseñada con un enfoque 100% comercial, directo y enfocado en la conversión.\n\n` +
@@ -471,31 +500,35 @@ export default function IntelRetailApp() {
   };
 
   return (
-    <div className="flex min-h-screen bg-transparent text-[#F3F4F6] relative overflow-hidden">
-      {/* BOTÓN FLOTANTE DESPLEGABLE */}
+    <div className="flex min-h-screen bg-transparent text-[#F3F4F6] relative overflow-hidden select-none">
+      {/* BOTÓN COLAPSADOR MINIMALISTA Y RESPONSIVO */}
       <button
         onClick={() => setSidebarOpen(!sidebarOpen)}
-        className={`fixed top-6 z-50 p-2.5 rounded-full bg-[#162127]/95 border border-[#724B39] hover:border-[#CF9D7B] shadow-2xl backdrop-blur-xl transition-all duration-500 ease-in-out flex items-center justify-center group ${
-          sidebarOpen ? 'left-[304px]' : 'left-6'
-        }`}
+        style={{ left: sidebarOpen ? `${sidebarWidth - 12}px` : '10px' }}
+        className="fixed top-5 z-50 w-7 h-7 rounded-full bg-[#162127]/90 border border-[#724B39] hover:border-[#CF9D7B] shadow-lg backdrop-blur-md transition-all duration-300 flex items-center justify-center group focus:outline-none"
         title={sidebarOpen ? 'Colapsar consola' : 'Expandir consola'}
       >
-        <div className="relative w-7 h-7 flex items-center justify-center">
-          <div className="w-2 h-2 rounded-full bg-[#CF9D7B] animate-quantum-pulse shadow-[0_0_8px_#CF9D7B]" />
-          <div className="absolute inset-0 rounded-full border border-[#CF9D7B] animate-spin-fast border-t-transparent" />
-          <div className="absolute inset-0.5 rounded-full border border-[#724B39] animate-spin-reverse-fast border-b-transparent" />
-        </div>
-        <div className="ml-1 text-[#CF9D7B] group-hover:text-white transition-colors">
-          {sidebarOpen ? <ChevronLeft className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
+        <div className="text-[#CF9D7B] group-hover:text-white transition-colors">
+          {sidebarOpen ? <ChevronLeft className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />}
         </div>
       </button>
 
-      {/* SIDEBAR RETRÁCTIL */}
+      {/* SIDEBAR RETRÁCTIL Y REDIMENSIONABLE */}
       <aside
-        className={`fixed top-0 left-0 h-full bg-[#162127]/95 backdrop-blur-2xl border-r border-[#724B39]/40 flex flex-col p-5 space-y-5 overflow-y-auto transition-all duration-500 ease-in-out z-40 ${
-          sidebarOpen ? 'w-80 translate-x-0 opacity-100 shadow-[25px_0_60px_rgba(0,0,0,0.9)]' : '-translate-x-full opacity-0 pointer-events-none w-80'
+        style={{ width: `${sidebarWidth}px` }}
+        className={`fixed top-0 left-0 h-full bg-[#162127]/95 backdrop-blur-2xl border-r border-[#724B39]/40 flex flex-col p-5 space-y-5 overflow-y-auto z-40 transition-transform duration-300 ease-in-out ${
+          sidebarOpen ? 'translate-x-0 opacity-100 shadow-[20px_0_50px_rgba(0,0,0,0.85)]' : '-translate-x-full opacity-0 pointer-events-none'
         }`}
       >
+        {/* Manilla / Handler para estirar o encoger el sidebar */}
+        <div
+          onMouseDown={handleMouseDown}
+          className="absolute top-0 right-0 w-2 h-full cursor-col-resize hover:bg-[#CF9D7B]/30 transition-colors z-50 flex items-center justify-center group"
+          title="Arrastra para redimensionar el panel"
+        >
+          <div className="w-0.5 h-8 bg-[#724B39] group-hover:bg-[#CF9D7B] rounded-full" />
+        </div>
+
         <div>
           <div className="flex items-center space-x-3 mb-6">
             <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-[#3A3534] to-[#0C1519] flex items-center justify-center text-[#CF9D7B] shadow-lg border border-[#724B39]/60">
@@ -528,7 +561,7 @@ export default function IntelRetailApp() {
                   }`}
                 >
                   <Icon className="w-4 h-4" />
-                  <span>{tab.label}</span>
+                  <span className="truncate">{tab.label}</span>
                 </button>
               );
             })}
@@ -639,8 +672,8 @@ export default function IntelRetailApp() {
           )}
         </div>
 
-        {/* Chat IA */}
-        <div className="flex-1 flex flex-col min-h-[240px] p-3 rounded-xl bg-[#0C1519]/70 border border-[#724B39]/40">
+        {/* Chat IA Lateral */}
+        <div className="flex-1 flex flex-col min-h-[220px] p-3 rounded-xl bg-[#0C1519]/70 border border-[#724B39]/40">
           <div className="flex items-center space-x-2 pb-2 border-b border-[#724B39]/40 mb-2">
             <Bot className="w-4 h-4 text-[#CF9D7B]" />
             <span className="text-xs font-bold text-[#CF9D7B] uppercase">Copiloto IA</span>
@@ -683,11 +716,10 @@ export default function IntelRetailApp() {
         </div>
       </aside>
 
-      {/* ÁREA DE CONTENIDO */}
+      {/* ÁREA DE CONTENIDO PRINCIPAL */}
       <main
-        className={`flex-1 min-h-screen p-8 lg:p-12 overflow-y-auto transition-all duration-500 ease-in-out ${
-          sidebarOpen ? 'ml-80' : 'ml-0'
-        }`}
+        style={{ marginLeft: sidebarOpen ? `${sidebarWidth}px` : '0px' }}
+        className="flex-1 min-h-screen p-8 lg:p-12 overflow-y-auto transition-all duration-300 ease-in-out select-text"
       >
         {screen !== 'home' && (
           <div className="max-w-5xl mx-auto mb-6">
@@ -1098,7 +1130,7 @@ export default function IntelRetailApp() {
                   </div>
                 </div>
 
-                {/* CONSOLA DE APUNTES EJECUTIVOS (HISTORIAL DE LA SESIÓN EN EL LIENZO PRINCIPAL) */}
+                {/* CONSOLA DE APUNTES CON TIPOGRAFÍA DEL SISTEMA */}
                 {aiNotes && (
                   <div className="glass-card p-6 rounded-2xl space-y-3 border-l-4 border-l-[#CF9D7B]">
                     <div className="flex items-center space-x-2 pb-2 border-b border-[#724B39]/40">
@@ -1107,7 +1139,7 @@ export default function IntelRetailApp() {
                         📄 Mis Apuntes de esta Sesión (Historial)
                       </h4>
                     </div>
-                    <div className="bg-[#0C1519]/90 border border-[#724B39]/40 rounded-xl p-5 text-xs text-[#D1D5DB] leading-relaxed whitespace-pre-wrap max-h-96 overflow-y-auto font-mono selection:bg-[#724B39] selection:text-white">
+                    <div className="bg-[#0C1519]/90 border border-[#724B39]/40 rounded-xl p-5 text-sm text-[#F3F4F6] font-sans leading-relaxed whitespace-pre-wrap max-h-96 overflow-y-auto selection:bg-[#724B39] selection:text-white">
                       {aiNotes}
                     </div>
                   </div>
@@ -1405,7 +1437,7 @@ export default function IntelRetailApp() {
               </button>
             </div>
 
-            {/* CONSOLA DE APUNTES EN EL SIMULADOR */}
+            {/* CONSOLA DE APUNTES EN EL SIMULADOR CON TIPOGRAFÍA DEL SISTEMA */}
             {aiNotes && (
               <div className="glass-card p-6 rounded-2xl space-y-3 border-l-4 border-l-[#CF9D7B]">
                 <div className="flex items-center space-x-2 pb-2 border-b border-[#724B39]/40">
@@ -1414,7 +1446,7 @@ export default function IntelRetailApp() {
                     📄 Mis Apuntes de esta Sesión (Historial)
                   </h4>
                 </div>
-                <div className="bg-[#0C1519]/90 border border-[#724B39]/40 rounded-xl p-5 text-xs text-[#D1D5DB] leading-relaxed whitespace-pre-wrap max-h-96 overflow-y-auto font-mono selection:bg-[#724B39] selection:text-white">
+                <div className="bg-[#0C1519]/90 border border-[#724B39]/40 rounded-xl p-5 text-sm text-[#F3F4F6] font-sans leading-relaxed whitespace-pre-wrap max-h-96 overflow-y-auto selection:bg-[#724B39] selection:text-white">
                   {aiNotes}
                 </div>
               </div>
