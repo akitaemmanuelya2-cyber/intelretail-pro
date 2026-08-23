@@ -29,6 +29,7 @@ import {
   Brain,
   FileSpreadsheet,
   FileText,
+  FileEdit,
 } from 'lucide-react';
 import {
   ResponsiveContainer,
@@ -62,7 +63,6 @@ const DISTINCT_COLORS = [
   '#CF9D7B', '#724B39', '#38B2AC', '#E53E3E', '#805AD5'
 ];
 
-// Componente de renderizado para esferas de alto contraste y volumen
 const LargeSphereNode = (props: any) => {
   const { cx, cy, payload } = props;
   if (!cx || !cy) return null;
@@ -133,11 +133,11 @@ export default function IntelRetailApp() {
   const [seasonality, setSeasonality] = useState(0);
   const [rateAdjustment, setRateAdjustment] = useState(0);
 
-  // Estados Chat IA
+  // Estados Chat e Historial de Apuntes IA
   const [chatInput, setChatInput] = useState('');
   const [chatHistory, setChatHistory] = useState<{ role: 'user' | 'assistant'; text: string }[]>([]);
   const [loadingAI, setLoadingAI] = useState(false);
-  const [aiNotes, setAiNotes] = useState('');
+  const [aiNotes, setAiNotes] = useState<string>('');
 
   const currencySymbol = currency === 'USD' ? 'USD $' : '$';
 
@@ -383,8 +383,8 @@ export default function IntelRetailApp() {
     });
   }, [targetProfit, plannerMonths, plannerFixedCosts, maxDailyCapacity, seasonality, rateAdjustment, datasetTotals, dataset]);
 
-// Motor Estratégico Inteligente (Cliente Autónomo + Conexión Gemini)
-  const handleSendMessage = async (customPrompt?: string) => {
+  // Motor Estratégico IA (Escritura en Consola de Apuntes Principal)
+  const handleSendMessage = async (customPrompt?: string, categoryHeader?: string) => {
     const textToSend = customPrompt || chatInput;
     if (!textToSend.trim()) return;
 
@@ -394,7 +394,6 @@ export default function IntelRetailApp() {
     setLoadingAI(true);
 
     try {
-      // 1. Si existe clave de Gemini en el entorno cliente (NEXT_PUBLIC_GEMINI_API_KEY)
       const clientApiKey = process.env.NEXT_PUBLIC_GEMINI_API_KEY;
       if (clientApiKey) {
         const response = await fetch(
@@ -408,8 +407,8 @@ export default function IntelRetailApp() {
                   role: 'user',
                   parts: [
                     {
-                      text: `Eres el consultor financiero retail experto de IntelRetail Pro.\nMoneda: ${currency}.\nResumen de Métricas: ${
-                        datasetTotals ? `Ventas: ${datasetTotals.totalSales}, Ganancia Neta: ${datasetTotals.totalProfit}, Estrella: ${datasetTotals.starProduct?.product}, Dormido: ${datasetTotals.sleepingProduct?.product}` : 'Sin archivo cargado'
+                      text: `Eres el consultor financiero retail de IntelRetail Pro.\nMoneda: ${currency}.\nResumen de Métricas: ${
+                        datasetTotals ? `Ventas: ${datasetTotals.totalSales}, Ganancia: ${datasetTotals.totalProfit}, Estrella: ${datasetTotals.starProduct?.product}, Dormido: ${datasetTotals.sleepingProduct?.product}` : 'Sin datos'
                       }.\n\nConsulta:\n${textToSend}`,
                     },
                   ],
@@ -424,15 +423,16 @@ export default function IntelRetailApp() {
           const reply = data.candidates?.[0]?.content?.parts?.[0]?.text;
           if (reply) {
             setChatHistory([...newHistory, { role: 'assistant', text: reply }]);
-            setAiNotes((prev) => `${prev}\n\n[Diagnóstico IA - ${screen}]:\n${reply}`);
+            const formattedEntry = `[${categoryHeader || 'Análisis de Auditoría'}]:\n\n${reply}`;
+            setAiNotes((prev) => prev ? `${prev}\n\n${formattedEntry}` : formattedEntry);
             setLoadingAI(false);
             return;
           }
         }
       }
 
-      // 2. Motor de Inferencia Estratégica Retail Autónoma (Sin fallas, instantáneo)
-      await new Promise((r) => setTimeout(r, 600)); // Latencia táctica
+      // Inferencia Estratégica Retail Autónoma en Español
+      await new Promise((r) => setTimeout(r, 600));
 
       let aiReply = '';
       const star = datasetTotals?.starProduct?.product || 'Producto Estrella';
@@ -441,35 +441,30 @@ export default function IntelRetailApp() {
       const totalS = datasetTotals?.totalSales ? `${currencySymbol}${datasetTotals.totalSales.toLocaleString('es-CO', { maximumFractionDigits: 0 })}` : '$0';
       const totalP = datasetTotals?.totalProfit ? `${currencySymbol}${datasetTotals.totalProfit.toLocaleString('es-CO', { maximumFractionDigits: 0 })}` : '$0';
 
-      if (customPrompt || textToSend.toLowerCase().includes('estrategia') || textToSend.toLowerCase().includes('diagnostico')) {
-        aiReply = `📊 INFORME EJECUTIVO & DIRECTRICES ESTRATÉGICAS (${currency}):\n\n` +
-          `• Facturación Registrada: ${totalS} | Ganancia Neta Libre: ${totalP}\n` +
-          `• Ticket Promedio Actual: ${avgT}\n\n` +
-          `🎯 PLAN DE ACCIÓN RECOMENDADO:\n` +
-          `1. Estrategia Cross-Selling (Impulso): Empaqueta '${sleeping}' junto a '${star}' con un descuento del 8% en el combo para liberar inventario sin erosionar el margen global.\n` +
-          `2. Blindaje de Margen: '${star}' lidera la rentabilidad; protege sus costos de adquisición e implementa un programa de lealtad para sus compradores recurrentes.\n` +
-          `3. Optimización de Tarifa: Un ajuste tarifario del +3% en el catálogo absorbería los costos fijos proyectados y elevaría la ganancia neta en un 12.4% este trimestre.`;
-      } else if (textToSend.toLowerCase().includes('precio') || textToSend.toLowerCase().includes('costo')) {
-        aiReply = `💡 ANÁLISIS DE PRECIOS & COSTOS:\n\n` +
-          `• Se sugiere mantener un margen neto no inferior al 35% en productos de alta rotación.\n` +
-          `• Para '${sleeping}', evalúa renegociar el costo de adquisición con proveedores o aplicar una promoción relámpago 2x1.5.`;
+      if (categoryHeader === 'Campaña de Marketing' || textToSend.toLowerCase().includes('copy')) {
+        aiReply = `[Campaña de Marketing para '${prodPromo || 'Catálogo General'}']: ¡Hola! Aquí tienes la propuesta de campaña para ${prodPromo || 'tu producto'}, diseñada con un enfoque 100% comercial, directo y enfocado en la conversión.\n\n` +
+          `1. Copy para Meta (Facebook / Instagram)\n\n` +
+          `Texto del anuncio:\n` +
+          `¿Buscas maximizar el rendimiento y obtener la mejor calidad? 🚀 Descubre '${prodPromo || 'nuestra solución'}', diseñado para superar expectativas con garantía total. Aprovecha nuestras unidades con envío prioritario hoy mismo.\n\n` +
+          `Llamada a la Acción (CTA): Haz clic en 'Comprar Ahora' y asegura tu pedido antes de agotar existencias.\n\n` +
+          `2. Títulos de Impacto (Google Ads):\n` +
+          `• ${prodPromo || 'Catálogo Premium'} - Oferta Exclusiva y Garantizada\n` +
+          `• Calidad Superior al Mejor Precio - Pide Hoy\n` +
+          `• Entrega Inmediata y Soporte Directo 24/7\n\n` +
+          `3. Enfoque Visual:\n` +
+          `Fondo limpio y minimalista que resalte el producto en primer plano, con etiqueta flotante de beneficio directo.`;
       } else {
-        aiReply = `🤖 CONSULTA PROCESADA:\n\n` +
-          `Para optimizar las operaciones con los datos actuales (${totalS} en ventas):\n` +
-          `• Prioriza la rotación de los 3 productos con menor salida en el análisis profundo.\n` +
-          `• Monitorea que el CAC de las campañas de pauta no supere el 20% del ticket promedio (${avgT}).`;
+        aiReply = `• Cross-Merchandising y Bundling Estratégico: Empaquetar el ${star} junto al ${sleeping} en un "Combo Esencial", aplicando un descuento marginal sobre el producto secundario para transferir el alto tráfico del producto estrella sin sacrificar el margen global.\n\n` +
+          `• Ubicación por Adyacencia en Punto de Venta: Reubicar el ${sleeping} inmediatamente al lado del ${star} en la góndola e implementar visual merchandising (POP) cross-category, capitalizando la alta intención de compra del producto líder para generar venta cruzada por impulso.\n\n` +
+          `• Incentivo por Umbral de Ticket Promedio: Diseñar una promoción B2B/Volumen que condicione transacciones cercanas al ticket promedio (${avgT}): por la compra de volumen en ${star}, otorgar un precio preferencial en ${sleeping}, evacuando el stock estancado mediante los compradores de alto valor.`;
       }
 
       setChatHistory([...newHistory, { role: 'assistant', text: aiReply }]);
-      setAiNotes((prev) => `${prev}\n\n[Diagnóstico IA - ${screen}]:\n${aiReply}`);
+      const headerTitle = categoryHeader || 'Análisis de Auditoría';
+      const formattedEntry = `[${headerTitle}]:\n\n${aiReply}`;
+      setAiNotes((prev) => prev ? `${prev}\n\n${formattedEntry}` : formattedEntry);
     } catch {
-      setChatHistory([
-        ...newHistory,
-        {
-          role: 'assistant',
-          text: 'Análisis estratégico generado localmente. Tus métricas están listas para exportar en el informe de texto.',
-        },
-      ]);
+      setChatHistory([...newHistory, { role: 'assistant', text: 'Error al sintetizar el informe.' }]);
     } finally {
       setLoadingAI(false);
     }
@@ -595,7 +590,7 @@ export default function IntelRetailApp() {
           </div>
         </div>
 
-        {/* Ingesta de Datos */}
+        {/* Carga de Datos */}
         <div className="p-3.5 rounded-xl bg-[#0C1519]/70 border border-[#724B39]/40 space-y-3">
           <span className="text-xs font-bold text-[#CF9D7B] uppercase tracking-wider block">Ingesta de Datos</span>
 
@@ -675,11 +670,11 @@ export default function IntelRetailApp() {
               placeholder="Instrucción gerencial..."
               value={chatInput}
               onChange={(e) => setChatInput(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
+              onKeyDown={(e) => e.key === 'Enter' && handleSendMessage(chatInput, 'Consulta Copiloto')}
               className="flex-1 bg-[#162127] border border-[#724B39]/60 rounded-lg px-2.5 py-1.5 text-xs text-white focus:outline-none focus:border-[#CF9D7B]"
             />
             <button
-              onClick={() => handleSendMessage()}
+              onClick={() => handleSendMessage(chatInput, 'Consulta Copiloto')}
               className="btn-interactive p-2 rounded-lg text-[#CF9D7B]"
             >
               <Send className="w-3.5 h-3.5" />
@@ -1043,6 +1038,7 @@ export default function IntelRetailApp() {
                   </div>
                 </div>
 
+                {/* EXPORTAR DATOS Y CONSULTOR IA */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="glass-card p-6 rounded-2xl space-y-4 flex flex-col justify-between">
                     <div className="space-y-1.5">
@@ -1089,19 +1085,35 @@ export default function IntelRetailApp() {
                       <button
                         onClick={() =>
                           handleSendMessage(
-                            `Producto Estrella: '${datasetTotals?.starProduct?.product}'. Producto Dormido: '${datasetTotals?.sleepingProduct?.product}'. Ticket Promedio: ${datasetTotals?.avgTicket}. Entrega 3 estrategias comerciales precisas para elevar la rotación y el margen.`
+                            `Producto Estrella: '${datasetTotals?.starProduct?.product}'. Producto Dormido: '${datasetTotals?.sleepingProduct?.product}'. Ticket Promedio: ${datasetTotals?.avgTicket}. Entrega 3 estrategias comerciales precisas para elevar la rotación y el margen.`,
+                            'Análisis de Auditoría'
                           )
                         }
-                        className="btn-interactive w-full py-3.5 px-4 rounded-xl font-bold text-sm text-white flex items-center justify-center space-x-2 bg-gradient-to-r from-[#724B39] to-[#3A3534] border border-[#CF9D7B]"
+                        className="w-full py-3.5 px-4 rounded-xl font-bold text-sm text-white flex items-center justify-center space-x-2 transition-all transform hover:scale-[1.02] shadow-lg bg-gradient-to-r from-red-500 via-rose-500 to-pink-500 hover:from-red-600 hover:to-pink-600"
                       >
-                        <Sparkles className="w-4 h-4 text-[#CF9D7B] animate-pulse" />
+                        <Sparkles className="w-4 h-4 text-white animate-pulse" />
                         <span>✨ Generar Análisis Automático</span>
                       </button>
                     </div>
                   </div>
                 </div>
 
-                {/* 3. MATRIZ BCG CON ESFERAS DE ALTO CONTRASTE */}
+                {/* CONSOLA DE APUNTES EJECUTIVOS (HISTORIAL DE LA SESIÓN EN EL LIENZO PRINCIPAL) */}
+                {aiNotes && (
+                  <div className="glass-card p-6 rounded-2xl space-y-3 border-l-4 border-l-[#CF9D7B]">
+                    <div className="flex items-center space-x-2 pb-2 border-b border-[#724B39]/40">
+                      <FileEdit className="w-5 h-5 text-[#CF9D7B]" />
+                      <h4 className="text-sm font-bold text-white tracking-wide">
+                        📄 Mis Apuntes de esta Sesión (Historial)
+                      </h4>
+                    </div>
+                    <div className="bg-[#0C1519]/90 border border-[#724B39]/40 rounded-xl p-5 text-xs text-[#D1D5DB] leading-relaxed whitespace-pre-wrap max-h-96 overflow-y-auto font-mono selection:bg-[#724B39] selection:text-white">
+                      {aiNotes}
+                    </div>
+                  </div>
+                )}
+
+                {/* 3. MATRIZ BCG */}
                 <div className="glass-card p-6 rounded-2xl space-y-4">
                   <div className="flex items-center space-x-2">
                     <Target className="w-5 h-5 text-[#CF9D7B]" />
@@ -1383,14 +1395,30 @@ export default function IntelRetailApp() {
               <button
                 onClick={() =>
                   handleSendMessage(
-                    `Copy publicitario para '${prodPromo}' con tono '${tonePromo}'. Entrega: 1) Copy Meta Ads con CTA. 2) 3 Títulos Google Ads. 3) Enfoque visual.`
+                    `Copy publicitario para '${prodPromo}' con tono '${tonePromo}'. Entrega: 1) Copy Meta Ads con CTA. 2) 3 Títulos Google Ads. 3) Enfoque visual.`,
+                    'Campaña de Marketing'
                   )
                 }
-                className="btn-interactive py-2 px-4 rounded-xl text-[#CF9D7B] font-bold text-xs"
+                className="btn-interactive py-2.5 px-4 rounded-xl text-[#CF9D7B] font-bold text-xs"
               >
                 Generar Campaña IA
               </button>
             </div>
+
+            {/* CONSOLA DE APUNTES EN EL SIMULADOR */}
+            {aiNotes && (
+              <div className="glass-card p-6 rounded-2xl space-y-3 border-l-4 border-l-[#CF9D7B]">
+                <div className="flex items-center space-x-2 pb-2 border-b border-[#724B39]/40">
+                  <FileEdit className="w-5 h-5 text-[#CF9D7B]" />
+                  <h4 className="text-sm font-bold text-white tracking-wide">
+                    📄 Mis Apuntes de esta Sesión (Historial)
+                  </h4>
+                </div>
+                <div className="bg-[#0C1519]/90 border border-[#724B39]/40 rounded-xl p-5 text-xs text-[#D1D5DB] leading-relaxed whitespace-pre-wrap max-h-96 overflow-y-auto font-mono selection:bg-[#724B39] selection:text-white">
+                  {aiNotes}
+                </div>
+              </div>
+            )}
           </div>
         )}
 
