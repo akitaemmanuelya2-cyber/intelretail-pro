@@ -56,7 +56,6 @@ interface RawProductRow {
   customer: string;
 }
 
-// Paleta cromática categórica para identificación visual inmediata
 const DISTINCT_COLORS = [
   '#4E79A7', '#F28E2B', '#E15759', '#76B7B2', '#59A14F',
   '#EDC948', '#B07AA1', '#FF9DA7', '#9C755F', '#BAB0AC',
@@ -115,12 +114,10 @@ export default function IntelRetailApp() {
 
   const currencySymbol = currency === 'USD' ? 'USD $' : '$';
 
-  // Multiplicador reactivo
   const conversionMultiplier = useMemo(() => {
     return applyConversion ? exchangeRate : 1.0;
   }, [applyConversion, exchangeRate]);
 
-  // Dataset recalculado en tiempo real
   const dataset = useMemo(() => {
     return rawDataset.map((row) => {
       const sales = row.rawSales * conversionMultiplier;
@@ -138,7 +135,6 @@ export default function IntelRetailApp() {
     });
   }, [rawDataset, conversionMultiplier, costConfig]);
 
-  // Ingesta de archivo
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -258,7 +254,6 @@ export default function IntelRetailApp() {
     link.click();
   };
 
-  // Cálculos Express
   const expressResults = useMemo(() => {
     return calculateExpressDiagnostic({
       weeklySales,
@@ -270,7 +265,6 @@ export default function IntelRetailApp() {
     });
   }, [weeklySales, mixServices, marginAvg, fixedCosts, variableCosts, totalCustomers]);
 
-  // Totales Dataset & Agrupación
   const datasetTotals = useMemo(() => {
     if (dataset.length === 0) return null;
     const totalSales = dataset.reduce((acc, r) => acc + r.sales, 0);
@@ -299,7 +293,6 @@ export default function IntelRetailApp() {
     return { totalSales, totalQty, totalProfit, avgTicket, groupedList, starProduct, leaderProduct, sleepingProduct, avgCostPct };
   }, [dataset, costConfig]);
 
-  // Análisis Profundo
   const deepAnalysisData = useMemo(() => {
     if (!datasetTotals) return [];
 
@@ -337,7 +330,6 @@ export default function IntelRetailApp() {
     }
   }, [dataset, datasetTotals, deepAnalysisType]);
 
-  // Simulador
   const simulationResults = useMemo(() => {
     return calculateSimulation({
       priceAdjustment,
@@ -350,7 +342,6 @@ export default function IntelRetailApp() {
     });
   }, [priceAdjustment, adBudget, leadCost, conversionRate, datasetTotals]);
 
-  // Planificador
   const plannerResults = useMemo(() => {
     return calculatePlanner({
       targetProfit,
@@ -365,7 +356,6 @@ export default function IntelRetailApp() {
     });
   }, [targetProfit, plannerMonths, plannerFixedCosts, maxDailyCapacity, seasonality, rateAdjustment, datasetTotals, dataset]);
 
-  // Enviar a IA
   const handleSendMessage = async (customPrompt?: string) => {
     const textToSend = customPrompt || chatInput;
     if (!textToSend.trim()) return;
@@ -612,7 +602,6 @@ export default function IntelRetailApp() {
           sidebarOpen ? 'ml-80' : 'ml-0'
         }`}
       >
-        {/* BOTÓN SUPERIOR: VOLVER AL INICIO */}
         {screen !== 'home' && (
           <div className="max-w-5xl mx-auto mb-6">
             <button
@@ -704,7 +693,7 @@ export default function IntelRetailApp() {
           </div>
         )}
 
-        {/* PANTALLA: DIAGNÓSTICO EXPRESS */}
+        {/* DIAGNÓSTICO EXPRESS */}
         {screen === 'express' && (
           <div className="max-w-5xl mx-auto space-y-6">
             <div>
@@ -837,7 +826,7 @@ export default function IntelRetailApp() {
           </div>
         )}
 
-        {/* PANTALLA: AUDITORÍA */}
+        {/* AUDITORÍA */}
         {screen === 'audit' && (
           <div className="max-w-5xl mx-auto space-y-6">
             <h2 className="text-2xl font-bold text-white">Auditoría de Catálogo y Costos</h2>
@@ -849,7 +838,6 @@ export default function IntelRetailApp() {
               </div>
             ) : (
               <>
-                {/* 1. Ajuste de Costos */}
                 <div className="glass-card p-6 rounded-2xl space-y-4">
                   <h3 className="text-xs font-bold text-[#CF9D7B] uppercase">1. Ajuste de Costos (Proveedores o Producción)</h3>
                   <p className="text-xs text-[#D1D5DB]">Porcentaje del precio de venta correspondiente al costo de adquisición o fabricación.</p>
@@ -919,7 +907,7 @@ export default function IntelRetailApp() {
                   </div>
                 </div>
 
-                {/* Métricas Resumen */}
+                {/* Métricas */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="glass-card p-5 rounded-2xl">
                     <span className="text-xs font-bold text-[#CF9D7B] uppercase">VENTAS TOTALES REGISTRADAS</span>
@@ -964,13 +952,12 @@ export default function IntelRetailApp() {
                   </div>
                 </div>
 
-                {/* 2 PANELES: EXPORTAR DATOS Y CONSULTOR IA EJECUTIVO (TEXTOS EXPLICATIVOS ORIGINALES) */}
+                {/* EXPORTAR DATOS Y CONSULTOR IA */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {/* Panel Izquierdo: Exportar Datos */}
                   <div className="glass-card p-6 rounded-2xl space-y-4 flex flex-col justify-between">
                     <div className="space-y-1.5">
                       <div className="flex items-center space-x-2">
-                        <Save className="w-5 h-5 text-indigo-400" />
+                        <Save className="w-5 h-5 text-[#CF9D7B]" />
                         <h4 className="text-lg font-bold text-white">Exportar Datos</h4>
                       </div>
                       <p className="text-xs text-[#D1D5DB] leading-relaxed">
@@ -983,7 +970,7 @@ export default function IntelRetailApp() {
                         onClick={downloadAuditExcel}
                         className="btn-interactive w-full py-2.5 px-4 rounded-xl text-xs font-bold flex items-center justify-center space-x-2 text-[#CF9D7B]"
                       >
-                        <FileSpreadsheet className="w-4 h-4 text-emerald-400" />
+                        <FileSpreadsheet className="w-4 h-4 text-[#CF9D7B]" />
                         <span>Descargar Auditoría (.xlsx)</span>
                       </button>
 
@@ -991,17 +978,16 @@ export default function IntelRetailApp() {
                         onClick={downloadAuditTextReport}
                         className="btn-interactive w-full py-2.5 px-4 rounded-xl text-xs font-bold flex items-center justify-center space-x-2 text-[#CF9D7B]"
                       >
-                        <FileText className="w-4 h-4 text-sky-400" />
+                        <FileText className="w-4 h-4 text-[#CF9D7B]" />
                         <span>Descargar Informe Ejecutivo (.txt)</span>
                       </button>
                     </div>
                   </div>
 
-                  {/* Panel Derecho: Consultor IA Ejecutivo */}
                   <div className="glass-card p-6 rounded-2xl space-y-4 flex flex-col justify-between">
                     <div className="space-y-1.5">
                       <div className="flex items-center space-x-2">
-                        <Brain className="w-5 h-5 text-pink-400" />
+                        <Brain className="w-5 h-5 text-[#CF9D7B]" />
                         <h4 className="text-lg font-bold text-white">Consultor IA Ejecutivo</h4>
                       </div>
                       <p className="text-xs text-[#D1D5DB] leading-relaxed">
@@ -1016,24 +1002,23 @@ export default function IntelRetailApp() {
                             `Producto Estrella: '${datasetTotals?.starProduct?.product}'. Producto Dormido: '${datasetTotals?.sleepingProduct?.product}'. Ticket Promedio: ${datasetTotals?.avgTicket}. Entrega 3 estrategias comerciales precisas para elevar la rotación y el margen.`
                           )
                         }
-                        className="w-full py-3.5 px-4 rounded-xl font-bold text-sm text-white flex items-center justify-center space-x-2 transition-all transform hover:scale-[1.02] shadow-lg bg-gradient-to-r from-red-500 via-rose-500 to-pink-500 hover:from-red-600 hover:to-pink-600"
+                        className="btn-interactive w-full py-3.5 px-4 rounded-xl font-bold text-sm text-white flex items-center justify-center space-x-2 bg-gradient-to-r from-[#724B39] to-[#3A3534] border border-[#CF9D7B]"
                       >
-                        <Sparkles className="w-4 h-4 text-white animate-pulse" />
+                        <Sparkles className="w-4 h-4 text-[#CF9D7B] animate-pulse" />
                         <span>✨ Generar Análisis Automático</span>
                       </button>
                     </div>
                   </div>
                 </div>
 
-                {/* 3. MATRIZ BCG CON COLORES CATEGÓRICOS POR PRODUCTO Y LEYENDA DINÁMICA */}
+                {/* 3. MATRIZ BCG (CÍRCULOS +50% TAMAÑO Y LEYENDA) */}
                 <div className="glass-card p-6 rounded-2xl space-y-4">
                   <div className="flex items-center space-x-2">
-                    <Target className="w-5 h-5 text-rose-500" />
+                    <Target className="w-5 h-5 text-[#CF9D7B]" />
                     <h3 className="text-base font-bold text-white">3. Matriz BCG: Rentabilidad vs. Rotación</h3>
                   </div>
 
                   <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 items-center">
-                    {/* Gráfica Recharts Scatter */}
                     <div className="lg:col-span-3 h-80 w-full">
                       <ResponsiveContainer width="100%" height="100%">
                         <ScatterChart margin={{ top: 20, right: 30, bottom: 25, left: 25 }}>
@@ -1060,7 +1045,7 @@ export default function IntelRetailApp() {
                               return (
                                 <div className="p-3 bg-[#162127] border border-[#724B39] rounded-xl shadow-2xl text-xs space-y-1">
                                   <p className="font-bold text-white flex items-center space-x-1.5">
-                                    <span className="w-2.5 h-2.5 rounded-full inline-block" style={{ backgroundColor: data.color }} />
+                                    <span className="w-3 h-3 rounded-full inline-block" style={{ backgroundColor: data.color }} />
                                     <span>{data.product}</span>
                                   </p>
                                   <p className="text-[#D1D5DB]">Rotación: <b className="text-white">{data.quantity} Unds</b></p>
@@ -1076,7 +1061,8 @@ export default function IntelRetailApp() {
                                 key={`cell-${index}`}
                                 fill={entry.color}
                                 stroke="#FFFFFF"
-                                strokeWidth={1}
+                                strokeWidth={1.5}
+                                r={7} // +50% tamaño (antes 4.5)
                               />
                             ))}
                           </Scatter>
@@ -1084,9 +1070,8 @@ export default function IntelRetailApp() {
                       </ResponsiveContainer>
                     </div>
 
-                    {/* Leyenda Visual de Productos */}
                     <div className="max-h-72 overflow-y-auto space-y-1.5 p-3 rounded-xl bg-[#0C1519]/80 border border-[#724B39]/40 text-xs">
-                      <span className="text-[11px] font-bold text-[#CF9D7B] uppercase tracking-wider block mb-2">Product Name</span>
+                      <span className="text-[11px] font-bold text-[#CF9D7B] uppercase tracking-wider block mb-2">PRODUCT NAME</span>
                       {(datasetTotals?.groupedList || []).map((item, idx) => (
                         <div key={idx} className="flex items-center space-x-2 text-xs py-0.5">
                           <span className="w-3 h-3 rounded-full shrink-0 shadow-sm" style={{ backgroundColor: item.color }} />
@@ -1097,7 +1082,7 @@ export default function IntelRetailApp() {
                   </div>
                 </div>
 
-                {/* 4. ANÁLISIS PROFUNDO CON COLORES DIFERENCIADOS */}
+                {/* 4. ANÁLISIS PROFUNDO */}
                 <div className="glass-card p-6 rounded-2xl space-y-4">
                   <h3 className="text-base font-bold text-white">4. Análisis Profundo del Negocio</h3>
 
@@ -1172,7 +1157,7 @@ export default function IntelRetailApp() {
           </div>
         )}
 
-        {/* PANTALLA: SIMULADOR */}
+        {/* SIMULADOR CON COLORES DIFERENCIADOS EN ESCENARIOS */}
         {screen === 'simulator' && (
           <div className="max-w-5xl mx-auto space-y-6">
             <h2 className="text-2xl font-bold text-white">Simulador Financiero & Pauta IA</h2>
@@ -1224,9 +1209,10 @@ export default function IntelRetailApp() {
               Estimación de campaña: Con este presupuesto se proyecta atraer <b>{simulationResults.leadsGenerated} leads</b> y convertir aproximadamente <b>{simulationResults.newCustomers} clientes nuevos</b>.
             </div>
 
+            {/* COMPARADOR DE ESCENARIOS MULTICOLOR */}
             <div className="glass-card p-6 rounded-2xl space-y-4">
               <div className="flex justify-between items-center">
-                <h3 className="text-xs font-bold text-[#CF9D7B] uppercase">Comparador de Escenarios Estratégicos</h3>
+                <h3 className="text-xs font-bold text-[#CF9D7B] uppercase tracking-wider">Comparador de Escenarios Estratégicos</h3>
                 <div className="flex space-x-2">
                   <button
                     onClick={() => setScenarioA({ ...simulationResults, priceAdjustment, adBudget, leadCost, conversionRate })}
@@ -1237,7 +1223,7 @@ export default function IntelRetailApp() {
                   {scenarioA && (
                     <button
                       onClick={() => setScenarioA(null)}
-                      className="btn-interactive py-1.5 px-3 rounded-lg bg-red-950 text-xs font-bold"
+                      className="btn-interactive py-1.5 px-3 rounded-lg bg-red-950 text-xs font-bold text-red-300"
                     >
                       Borrar Escenario A
                     </button>
@@ -1245,7 +1231,7 @@ export default function IntelRetailApp() {
                 </div>
               </div>
 
-              <div className="h-64 w-full">
+              <div className="h-72 w-full">
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart
                     data={[
@@ -1262,13 +1248,25 @@ export default function IntelRetailApp() {
                         'Escenario Vivo (Proyección)': simulationResults.simulatedProfit,
                       },
                     ]}
+                    margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
                   >
-                    <XAxis dataKey="name" stroke="#D1D5DB" />
-                    <YAxis stroke="#D1D5DB" />
-                    <Tooltip contentStyle={{ backgroundColor: '#162127', borderColor: '#724B39', borderRadius: '8px' }} />
-                    <Bar dataKey="Actual (Realidad)" fill="#3A3534" />
-                    {scenarioA && <Bar dataKey="Escenario A (Guardado)" fill="#724B39" />}
-                    <Bar dataKey="Escenario Vivo (Proyección)" fill="#CF9D7B" />
+                    <XAxis dataKey="name" stroke="#CF9D7B" />
+                    <YAxis
+                      stroke="#CF9D7B"
+                      tickFormatter={(val) => val >= 1000000 ? `${(val / 1000000).toFixed(1)}M` : `${(val / 1000).toFixed(0)}k`}
+                    />
+                    <Tooltip
+                      contentStyle={{ backgroundColor: '#162127', borderColor: '#724B39', borderRadius: '8px' }}
+                      formatter={(val: any) => [`${currencySymbol}${Number(val).toLocaleString('es-CO', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, '']}
+                    />
+                    <Legend
+                      wrapperStyle={{ paddingTop: 10 }}
+                      formatter={(value) => <span className="text-xs font-semibold text-[#D1D5DB]">{value}</span>}
+                    />
+                    {/* Barras con colores identificables */}
+                    <Bar dataKey="Actual (Realidad)" fill="#4E79A7" radius={[4, 4, 0, 0]} />
+                    {scenarioA && <Bar dataKey="Escenario A (Guardado)" fill="#F28E2B" radius={[4, 4, 0, 0]} />}
+                    <Bar dataKey="Escenario Vivo (Proyección)" fill="#CF9D7B" radius={[4, 4, 0, 0]} />
                   </BarChart>
                 </ResponsiveContainer>
               </div>
@@ -1314,7 +1312,7 @@ export default function IntelRetailApp() {
           </div>
         )}
 
-        {/* PANTALLA: PLANIFICADOR */}
+        {/* PLANIFICADOR */}
         {screen === 'planner' && (
           <div className="max-w-5xl mx-auto space-y-6">
             <div>
@@ -1365,7 +1363,6 @@ export default function IntelRetailApp() {
               </div>
             </div>
 
-            {/* Palancas Estratégicas Avanzadas */}
             <div className="space-y-3 pt-2">
               <h3 className="text-sm font-bold text-white uppercase tracking-wider">Palancas Estratégicas Avanzadas:</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
