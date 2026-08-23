@@ -1,36 +1,33 @@
 @import "tailwindcss";
 
 :root {
-  --bg-rich: #000000;
-  --bg-obsidian: #0B1B0E;
-  --bg-raven: #28282B;
-  --bg-midnight: #2C3539;
-  --bg-onyx: #353839;
-  --bg-jet: #343434;
-  --accent-charcoal: #36454F;
-  --accent-ebony: #555D50;
+  --bg-chinese-black: #0C1519;
+  --bg-dark-jungle: #162127;
+  --bg-jet: #3A3534;
+  --accent-coffee: #724B39;
+  --accent-brass: #CF9D7B;
   --text-main: #F3F4F6;
-  --text-muted: #D1D5DB;
+  --text-muted: #CF9D7B;
 }
 
 body {
-  background-color: #000000;
+  background-color: #0C1519;
   color: #F3F4F6;
   min-height: 100vh;
   font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   overflow-x: hidden;
 }
 
-/* Glassmorphism Gravitacional */
+/* Glassmorphism Dark Jungle & Brass */
 .glass-card {
-  background: linear-gradient(135deg, rgba(44, 53, 57, 0.45) 0%, rgba(11, 27, 14, 0.8) 100%);
+  background: linear-gradient(135deg, rgba(22, 33, 39, 0.6) 0%, rgba(12, 21, 25, 0.85) 100%);
   backdrop-filter: blur(18px);
   -webkit-backdrop-filter: blur(18px);
-  border: 1px solid rgba(85, 93, 80, 0.4);
+  border: 1px solid rgba(114, 75, 57, 0.35);
   border-radius: 16px;
 }
 
-/* Micro-interacción Cinética para Tarjetas del Lobby */
+/* Micro-interacción Cinética para Tarjetas */
 .lobby-card-interactive {
   position: relative;
   transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
@@ -39,8 +36,8 @@ body {
 
 .lobby-card-interactive:hover {
   transform: translateY(-8px) scale(1.02);
-  border-color: #555D50;
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.9), 0 0 25px rgba(85, 93, 80, 0.25);
+  border-color: #CF9D7B;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.9), 0 0 25px rgba(207, 157, 123, 0.2);
 }
 
 .lobby-card-interactive::before {
@@ -50,7 +47,7 @@ body {
   left: -100%;
   width: 100%;
   height: 100%;
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.07), transparent);
+  background: linear-gradient(90deg, transparent, rgba(207, 157, 123, 0.1), transparent);
   transition: 0.5s;
 }
 
@@ -58,19 +55,19 @@ body {
   left: 100%;
 }
 
-/* Botones con Impacto Cinético e Iluminación Relativista */
+/* Botones Cinéticos con Acento Antique Brass */
 .btn-interactive {
   position: relative;
   transition: all 0.25s cubic-bezier(0.2, 0.8, 0.2, 1);
   overflow: hidden;
-  border: 1px solid rgba(85, 93, 80, 0.5);
-  background: linear-gradient(135deg, #2C3539 0%, #28282B 100%);
+  border: 1px solid rgba(114, 75, 57, 0.55);
+  background: linear-gradient(135deg, #162127 0%, #3A3534 100%);
 }
 
 .btn-interactive:hover {
   transform: translateY(-2px) scale(1.02);
-  border-color: #F3F4F6;
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.7), 0 0 12px rgba(85, 93, 80, 0.4);
+  border-color: #CF9D7B;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.7), 0 0 14px rgba(207, 157, 123, 0.35);
 }
 
 .btn-interactive:active {
@@ -84,7 +81,7 @@ body {
   left: -100%;
   width: 100%;
   height: 100%;
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.12), transparent);
+  background: linear-gradient(90deg, transparent, rgba(207, 157, 123, 0.15), transparent);
   transition: 0.4s;
 }
 
@@ -120,18 +117,18 @@ body {
   animation: quantumPulse 2s ease-in-out infinite;
 }
 
-/* Scrollbar */
+/* Scrollbars */
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
 }
 ::-webkit-scrollbar-track {
-  background: #000000;
+  background: #0C1519;
 }
 ::-webkit-scrollbar-thumb {
-  background: #2C3539;
+  background: #162127;
   border-radius: 3px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #555D50;
+  background: #724B39;
 }
