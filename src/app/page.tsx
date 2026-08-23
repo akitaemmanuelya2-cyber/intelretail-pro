@@ -67,9 +67,6 @@ const DISTINCT_COLORS = [
   '#CF9D7B', '#724B39', '#38B2AC', '#E53E3E', '#805AD5'
 ];
 
-// Colores de contraste para pauta publicitaria
-const AD_DISTRIBUTION_COLORS = ['#E15759', '#4E79A7', '#00D2D3'];
-
 const LargeSphereNode = (props: any) => {
   const { cx, cy, payload } = props;
   if (!cx || !cy) return null;
@@ -438,27 +435,39 @@ export default function IntelRetailApp() {
     });
   }, [priceAdjustment, adBudget, leadCost, conversionRate, datasetTotals]);
 
-  // Distribución dinámica de pauta con umbrales reales de mercado
+  // Conversión interna a USD (pauta_usd) para umbrales exactos de marketing
+  const pautaUsd = useMemo(() => {
+    if (adBudget <= 0) return 0;
+    if (currency === 'USD') return adBudget;
+    return adBudget / (exchangeRate || 4000);
+  }, [adBudget, currency, exchangeRate]);
+
+  // Distribución dinámica con los 3 niveles y colores reales de marca
   const adPacingData = useMemo(() => {
-    if (adBudget <= 0) return [];
-    
-    if (adBudget < 150000) {
+    if (pautaUsd <= 0) return [];
+
+    // Nivel 1: Micro-Presupuesto (< $40 USD) -> 100% Meta Ads
+    if (pautaUsd < 40) {
       return [
-        { name: 'Meta (Instagram/Facebook)', value: 100, color: '#E15759' },
-      ];
-    } else if (adBudget < 800000) {
-      return [
-        { name: 'Meta (Instagram/Facebook)', value: 60, color: '#E15759' },
-        { name: 'TikTok Ads', value: 40, color: '#00D2D3' },
-      ];
-    } else {
-      return [
-        { name: 'Meta (Instagram/Facebook)', value: 50, color: '#E15759' },
-        { name: 'Google Ads (Búsqueda)', value: 30, color: '#4E79A7' },
-        { name: 'TikTok Ads', value: 20, color: '#00D2D3' },
+        { name: 'Meta (Instagram/Facebook)', value: 100, color: '#E1306C' },
       ];
     }
-  }, [adBudget]);
+    // Nivel 2: Multicanal Moderada ($40 a $150 USD) -> 70% Meta + 30% Google Ads
+    else if (pautaUsd <= 150) {
+      return [
+        { name: 'Meta (Instagram/Facebook)', value: 70, color: '#E1306C' },
+        { name: 'Google Ads (Búsqueda)', value: 30, color: '#4285F4' },
+      ];
+    }
+    // Nivel 3: Integral Omnicanal (> $150 USD) -> 50% Meta + 30% Google + 20% TikTok
+    else {
+      return [
+        { name: 'Meta (Instagram/Facebook)', value: 50, color: '#E1306C' },
+        { name: 'Google Ads (Búsqueda)', value: 30, color: '#4285F4' },
+        { name: 'TikTok Ads', value: 20, color: '#00F2FE' },
+      ];
+    }
+  }, [pautaUsd]);
 
   const plannerResults = useMemo(() => {
     return calculatePlanner({
@@ -1475,24 +1484,24 @@ export default function IntelRetailApp() {
               </div>
             </div>
 
-            {/* 2. DISTRIBUCIÓN ESTRATÉGICA DE PAUTA */}
+            {/* 2. DISTRIBUCIÓN ESTRATÉGICA DE PAUTA (NORMALIZACIÓN A USD & 3 NIVELES REALES) */}
             <div className="glass-card p-6 rounded-2xl space-y-4">
               <div className="flex items-center space-x-2">
                 <PieIcon className="w-5 h-5 text-[#CF9D7B]" />
                 <h3 className="text-sm font-bold uppercase tracking-wider text-white">2. Distribución Estratégica de Pauta</h3>
               </div>
 
-              {/* Recomendación de Mercado Contextual */}
+              {/* Recomendación de Mercado Contextual según Nivel en USD */}
               <div className="p-3.5 rounded-xl bg-[#0C1519]/80 border border-[#724B39]/50 flex items-center space-x-2.5 text-xs text-[#F3F4F6]">
                 <Lightbulb className="w-4 h-4 text-[#CF9D7B] shrink-0" />
                 <span>
                   {adBudget <= 0
                     ? 'Sin presupuesto de pauta asignado. Configura un valor en "Presupuesto Pauta" para calcular la distribución estratégica y el alcance esperado.'
-                    : adBudget < 150000
-                    ? `💡 Estrategia de Enfoque Único: Con ${currencySymbol}${adBudget.toLocaleString('es-CO')}, se recomienda destinar el 100% a Meta Ads para concentrar el algoritmo y superar la fase de aprendizaje.`
-                    : adBudget < 800000
-                    ? `💡 Estrategia Dual: Con ${currencySymbol}${adBudget.toLocaleString('es-CO')}, distribuye 60% en Meta Ads y 40% en TikTok Ads para maximizar tráfico y generación de leads directos.`
-                    : `💡 Integral Omnicanal: Con ${currencySymbol}${adBudget.toLocaleString('es-CO')}, tu presupuesto es óptimo para operar en Meta (50%), Google Ads de Búsqueda (30%) y TikTok Ads (20%).`}
+                    : pautaUsd < 40
+                    ? `💡 Nivel Micro-Presupuesto (~$${pautaUsd.toFixed(1)} USD): Con un presupuesto menor a $40 USD, el sistema bloquea otras opciones y recomienda 100% a Meta Ads (Instagram/Facebook) para concentrar el impacto visual sin diluir el dinero.`
+                    : pautaUsd <= 150
+                    ? `💡 Nivel Multicanal Moderada (~$${pautaUsd.toFixed(1)} USD): Tu presupuesto permite 70% en Meta Ads (creación de deseo visual) y 30% en Google Ads para capturar intención directa de búsqueda.`
+                    : `💡 Nivel Integral Omnicanal (~$${pautaUsd.toFixed(1)} USD): Presupuesto óptimo para viralidad y captura: 50% Meta Ads, 30% Google Ads y 20% TikTok Ads con suficiente volumen para optimizar el algoritmo.`}
                 </span>
               </div>
 
