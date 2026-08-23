@@ -557,9 +557,9 @@ Reglas de Comportamiento:
       let aiReply = '';
 
       if (clean === 'hola' || clean.includes('buenos dias') || clean.includes('buenas tardes') || clean.includes('buenas')) {
-        aiReply = `¡Hola, Emmanuel! Qué gusto saludarte. Tenemos consolidado tu catálogo con ${totalS} en ventas y un ticket promedio de ${avgT}. ¿En qué métrica o producto te gustaría profundizar hoy?`;
+        aiReply = `¡Hola! Qué gusto saludarte. Tenemos consolidado tu catálogo con ${totalS} en ventas y un ticket promedio de ${avgT}. ¿En qué métrica o producto te gustaría profundizar hoy?`;
       } else if (clean.includes('adios') || clean.includes('chao') || clean.includes('hasta luego') || clean.includes('nos vemos') || clean.includes('gracias')) {
-        aiReply = `¡Con mucho gusto, Emmanuel! Quedo a tu disposición cuando necesites auditar nuevas ventas o simular escenarios comerciales. ¡Muchos éxitos en la operación de hoy!`;
+        aiReply = `¡Con mucho gusto! Quedo a tu disposición cuando necesites auditar nuevas ventas o simular escenarios comerciales. ¡Muchos éxitos en la operación de hoy!`;
       } else if (clean.includes('menos vendido') || clean.includes('dormido') || clean.includes('rotacion baja') || clean.includes('peor')) {
         aiReply = `Para reactivar '${sleeping}' (tu producto con menor rotación), te recomiendo aplicar este plan de 3 pasos:\n\n` +
           `1. Combo de Arrastre: Crea un paquete donde '${sleeping}' tenga un descuento del 10% al comprarse junto a '${star}' (tu producto estrella). Esto aprovecha el tráfico del líder sin canibalizar margen.\n` +
