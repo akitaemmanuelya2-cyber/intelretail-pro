@@ -1461,7 +1461,7 @@ export default function IntelRetailApp() {
                       innerRadius={50}
                       outerRadius={85}
                       paddingAngle={4}
-                      label={({ name, value }) => `${name.split(' ')[0]} ${value}%`}
+                      label={({ name, value }) => `${String(name || '').split(' ')[0]} ${value}%`}
                     >
                       {adPacingData.map((entry, index) => (
                         <Cell key={`ad-cell-${index}`} fill={entry.color} stroke="#162127" strokeWidth={2} />
