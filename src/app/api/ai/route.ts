@@ -25,42 +25,44 @@ export async function POST(req: Request) {
       );
     }
 
-    const systemInstruction = `Eres TARS, el Director Comercial y Consultor Financiero Senior de 'IntelRetail Pro'.
-Tu personalidad es cercana, ejecutiva, analítica, profesional y con criterio de negocio de alto nivel.
-NUNCA utilices respuestas prefabricadas, clichés robóticos ni guiones genéricos.
+    // Estructura de 3 Capas: Identidad + Entorno + Nicho de Datos
+    const systemInstruction = `Eres TARS, el Asesor IA y Consultor Financiero Senior de 'IntelRetail Pro'.
+Actúa como un consultor experto, cercano, estratégico, empático y altamente analítico.
+NUNCA utilices respuestas prefabricadas, clichés robóticos ni guiones rígidos.
 
 =======================================================
-CONTEXTO FINANCIERO Y COMERCIAL EN TIEMPO REAL:
+1. CONCIENCIA DEL ENTORNO (Módulo Activo):
 =======================================================
-• Módulo actual en pantalla: ${screen || 'General'}.
-• Divisa de trabajo: ${currency || 'COP'}.
-• Métricas consolidadas: ${dataSummary || 'Sin datos cargados'}.
+• Módulo en pantalla: ${screen || 'General'}.
+• Divisa configurada: ${currency || 'COP'}.
+• Métricas globales: ${dataSummary || 'Sin datos cargados'}.
 • Ticket Promedio: ${avgTicket || '$0'}.
-• Producto Estrella (Mayor Utilidad): ${starProduct || 'No determinado'}.
-• Producto Líder en Rotación: ${leaderProduct || 'No determinado'}.
-• Producto Menos Vendido: ${sleepingProduct || 'No determinado'}.
+• Producto Estrella (Mayor Utilidad): '${starProduct || 'N/A'}'.
+• Producto Líder en Rotación: '${leaderProduct || 'N/A'}'.
+• Producto Menos Vendido / Dormido: '${sleepingProduct || 'N/A'}'.
 
 =======================================================
-BASE DE DATOS COMPLETA DEL CATÁLOGO (PRODUCTOS Y CIFRAS):
+2. LECTURA DEL NICHO & DATOS DEL CATÁLOGO:
 =======================================================
-${fullCatalog || 'No hay catálogo cargado aún por el usuario.'}
+Identifica el nicho del negocio según los datos provistos a continuación y adapta completamente tus recomendaciones, vocabulario y ejemplos a ese sector (ej: abarrotes, panadería, mascotas, moda, tecnología):
+
+${fullCatalog || 'Sin catálogo cargado aún.'}
 
 =======================================================
-DIRECTRICES DE RESPUESTA E INTERACCIÓN:
+3. DIRECTRICES ESTRATÉGICAS DE INTERACCIÓN:
 =======================================================
-1. CONSULTAS DE PRODUCTOS ESPECÍFICOS:
-   - Si el usuario te pregunta por cualquier producto del catálogo (ej: "leche alquería", "atún", "arroz", "detergente"):
-     Busca ese producto en la lista del catálogo provista arriba, analiza sus unidades vendidas, su facturación y su margen, y dale un diagnóstico táctico real (ej: si es un producto gancho, si conviene empaquetarlo, ajustar su precio o usarlo para elevar el ticket promedio).
+• CONSULTAS DE PRODUCTOS ESPECÍFICOS:
+  Si el usuario pregunta por un producto concreto del catálogo (ej: "leche alquería", "atún", "arroz", etc.), localízalo en los datos de arriba, analiza su rotación o margen y dale una recomendación táctica y real (cross-merchandising, combos de arrastre con el líder o ajuste de precio).
 
-2. PREGUNTAS FUERA DE TEMA O NO RELACIONADAS:
-   - Si el usuario hace preguntas ajenas (ej: "comprar un pan", temas personales, etc.):
-     Responde de forma amable, ingeniosa y breve, explicando que IntelRetail Pro es una plataforma analítica y de simulación estratégica (no una tienda de venta directa), e invítalo con simpatía a analizar las finanzas o la rotación de sus productos.
+• PREGUNTAS FUERA DE TEMA O NO RELACIONADAS:
+  Si el usuario hace preguntas ajenas a la tienda (ej: "comprar un pan", temas personales, chistes), responde con amabilidad y un toque de humor sutil, e invítalo cordialmente a retomar las finanzas y la rotación de sus productos en la app.
 
-3. PREGUNTAS ESTRATÉGICAS Y DE MARKETING:
-   - Entrega sugerencias reales de retail: combos cruzados (bundling), promociones condicionadas al ticket promedio (${avgTicket}), cambios de ubicación en góndola o estrategias de pauta publicitaria multicanal.`;
+• TÁCTICAS COMERCIALES REALES:
+  Propón estrategias accionables (bundling, promociones condicionadas al ticket promedio de ${avgTicket}, cambios de ubicación en góndola o pauta publicitaria multicanal).`;
 
     const contents: any[] = [];
 
+    // Historial reciente de la conversación
     if (Array.isArray(history) && history.length > 0) {
       history.slice(-6).forEach((h: any) => {
         contents.push({
@@ -72,30 +74,46 @@ DIRECTRICES DE RESPUESTA E INTERACCIÓN:
 
     contents.push({
       role: 'user',
-      parts: [{ text: `${systemInstruction}\n\nPregunta del usuario:\n${prompt}` }],
+      parts: [{ text: `${systemInstruction}\n\nConsulta del usuario:\n${prompt}` }],
     });
 
-    const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`,
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ contents }),
-      }
-    );
+    // Llamada con fallback automático entre modelos disponibles
+    const modelsToTry = ['gemini-2.0-flash', 'gemini-1.5-flash', 'gemini-1.5-pro'];
+    let lastError = null;
+    let replyText = null;
 
-    if (!response.ok) {
-      const errData = await response.json().catch(() => ({}));
+    for (const modelName of modelsToTry) {
+      try {
+        const response = await fetch(
+          `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`,
+          {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ contents }),
+          }
+        );
+
+        if (response.ok) {
+          const data = await response.json();
+          replyText = data.candidates?.[0]?.content?.parts?.[0]?.text;
+          if (replyText) break;
+        } else {
+          const err = await response.json().catch(() => ({}));
+          lastError = err.error?.message || `Error en ${modelName}`;
+        }
+      } catch (err: any) {
+        lastError = err.message;
+      }
+    }
+
+    if (!replyText) {
       return NextResponse.json(
-        { error: errData.error?.message || 'Error al conectar con el servicio de IA.' },
+        { error: lastError || 'No se pudo conectar con los modelos de Google Gemini.' },
         { status: 500 }
       );
     }
 
-    const data = await response.json();
-    const reply = data.candidates?.[0]?.content?.parts?.[0]?.text || 'No se pudo generar la respuesta.';
-
-    return NextResponse.json({ response: reply });
+    return NextResponse.json({ response: replyText });
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
