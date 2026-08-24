@@ -500,7 +500,7 @@ const handleSendMessage = async (customPrompt?: string, categoryHeader?: string)
       const totalP = datasetTotals?.totalProfit ? `${currencySymbol}${datasetTotals.totalProfit.toLocaleString('es-CO', { maximumFractionDigits: 0 })}` : '$0';
       const avgT = datasetTotals?.avgTicket ? `${currencySymbol}${datasetTotals.avgTicket.toLocaleString('es-CO', { maximumFractionDigits: 0 })}` : '$0';
 
-      // Pasamos todo el catálogo consolidado al backend para que conozca todos los productos
+      // Catálogo estructurado para que la IA conozca todos los productos y métricas
       const fullCatalog = datasetTotals?.groupedList?.map(p => 
         `• ${p.product}: Rotación ${p.quantity} Unds | Ventas ${currencySymbol}${p.sales.toLocaleString('es-CO')} | Ganancia Neta ${currencySymbol}${p.netProfit.toLocaleString('es-CO')}`
       ).join('\n') || 'Sin catálogo cargado aún.';
@@ -539,45 +539,6 @@ const handleSendMessage = async (customPrompt?: string, categoryHeader?: string)
       setChatHistory([...newHistory, { role: 'assistant', text: fallbackMsg }]);
     } catch (err: any) {
       setChatHistory([...newHistory, { role: 'assistant', text: 'Error de red al consultar el asistente. Intenta de nuevo.' }]);
-    } finally {
-      setLoadingAI(false);
-    }
-  };
-
-      // 2. RESPUESTA DINÁMICA LOCAL (Solo si no hay internet o clave)
-      await new Promise((r) => setTimeout(r, 400));
-      const clean = textToSend.toLowerCase().trim();
-      let aiReply = '';
-
-      if (clean === 'hola' || clean.includes('buenos dias') || clean.includes('buenas tardes') || clean.includes('buenas')) {
-        aiReply = `¡Hola! Bienvenido a IntelRetail Pro. Tengo procesado el catálogo con un volumen de ventas de ${totalS} y un ticket promedio de ${avgT}. ¿En qué producto o indicador te gustaría que nos enfoquemos?`;
-      } else if (clean.includes('adios') || clean.includes('chao') || clean.includes('hasta luego') || clean.includes('gracias') || clean.includes('muchas gracias')) {
-        aiReply = `¡Con el mayor gusto! Quedo a tu servicio para cualquier análisis de rentabilidad o simulación de escenarios comerciales. ¡Muchos éxitos en la jornada!`;
-      } else if (clean.includes('menos vendido') || clean.includes('dormido') || clean.includes('rotacion baja') || clean.includes('peor')) {
-        aiReply = `Para reactivar '${sleeping}', te sugiero 3 acciones comerciales inmediatas:\n\n` +
-          `1. Combo con el Líder: Empaqueta '${sleeping}' con '${star}' aplicando un 8% de descuento en el conjunto para aprovechar la alta rotación del estrella sin sacrificar margen neto.\n` +
-          `2. Posicionamiento en Góndola: Coloca '${sleeping}' a la altura de los ojos en la zona de mayor tránsito o cerca del mostrador de cobro.\n` +
-          `3. Incentivo por Monto Mínimo: Para compras que alcancen el ticket promedio (${avgT}), ofrece '${sleeping}' a un precio preferencial como venta complementaria.`;
-      } else if (clean.includes('estrella') || clean.includes('mas vendido') || clean.includes('mejor')) {
-        aiReply = `'${star}' representa tu mayor motor de utilidad neta actual. Protégelo asegurando suministro continuo con proveedores y evita rebajar su precio, ya que tracciona clientes por valor propio.`;
-      } else if (categoryHeader === 'Campaña de Marketing' || clean.includes('copy') || clean.includes('publicidad')) {
-        aiReply = `[Propuesta Publicitaria para '${prodPromo || 'Catálogo General'}']:\n\n` +
-          `1. Meta Ads (Instagram/Facebook):\n` +
-          `¿Buscas maximizar resultados con la mejor relación costo-beneficio? 🚀 Conoce '${prodPromo || 'nuestro catálogo'}', diseñado para ofrecer calidad garantizada con disponibilidad inmediata.\n\n` +
-          `👉 CTA: Compra hoy mismo y asegura tu pedido antes de agotar stock.\n\n` +
-          `2. Google Ads:\n` +
-          `• ${prodPromo || 'Catálogo Premium'} - Oferta Exclusiva\n` +
-          `• Calidad Superior y Garantía Directa`;
-      } else {
-        aiReply = `Para la consulta realizada sobre el catálogo actual (${totalS} en ventas totales): te recomiendo revisar el balance de margen neto de ${totalP} y enfocar esfuerzos en incrementar el ticket promedio (${avgT}) mediante venta cruzada.`;
-      }
-
-      setChatHistory([...newHistory, { role: 'assistant', text: aiReply }]);
-      const headerTitle = categoryHeader || (customPrompt ? 'Análisis de Auditoría' : 'Consulta Copiloto');
-      const formattedEntry = `[${headerTitle}]:\n\n${aiReply}`;
-      setAiNotes((prev) => (prev ? `${prev}\n\n${formattedEntry}` : formattedEntry));
-    } catch {
-      setChatHistory([...newHistory, { role: 'assistant', text: 'Estoy listo para asesorarte. ¿Qué aspecto comercial deseas revisar?' }]);
     } finally {
       setLoadingAI(false);
     }

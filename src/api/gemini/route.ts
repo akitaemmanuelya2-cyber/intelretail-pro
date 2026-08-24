@@ -3,62 +3,100 @@ import { NextResponse } from 'next/server';
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-    const { prompt, screen, currency, dataSummary } = body;
+    const {
+      prompt,
+      history,
+      screen,
+      currency,
+      dataSummary,
+      starProduct,
+      sleepingProduct,
+      leaderProduct,
+      avgTicket,
+      fullCatalog,
+    } = body;
 
-    const apiKey = process.env.GEMINI_API_KEY;
+    const apiKey = process.env.GEMINI_API_KEY || process.env.NEXT_PUBLIC_GEMINI_API_KEY;
 
-    // Si no hay API key configurada, responde con diagnóstico estructurado en vez de fallar
     if (!apiKey) {
-      return NextResponse.json({
-        response: `[Modo Diagnóstico Local - IntelRetail Pro]\n\n📊 Resumen de Métricas (${screen || 'General'}):\n• Estado: ${dataSummary || 'Datos analizados correctamente'}.\n• Divisa: ${currency || 'COP'}.\n\n💡 Diagnóstico Táctico:\n1. Optimiza la rotación de tus productos de menor volumen mediante combos o venta cruzada.\n2. Protege el margen de los artículos de alta facturación.\n3. Configura GEMINI_API_KEY en las variables de entorno para habilitar respuestas generativas en vivo.`,
+      return NextResponse.json(
+        { error: 'Clave GEMINI_API_KEY no detectada en variables de entorno.' },
+        { status: 500 }
+      );
+    }
+
+    const systemInstruction = `Eres TARS, el Director Comercial y Consultor Financiero Senior de 'IntelRetail Pro'.
+Tu personalidad es cercana, ejecutiva, analítica, profesional y con criterio de negocio de alto nivel.
+NUNCA utilices respuestas prefabricadas, clichés robóticos ni guiones genéricos.
+
+=======================================================
+CONTEXTO FINANCIERO Y COMERCIAL EN TIEMPO REAL:
+=======================================================
+• Módulo actual en pantalla: ${screen || 'General'}.
+• Divisa de trabajo: ${currency || 'COP'}.
+• Métricas consolidadas: ${dataSummary || 'Sin datos cargados'}.
+• Ticket Promedio: ${avgTicket || '$0'}.
+• Producto Estrella (Mayor Utilidad): ${starProduct || 'No determinado'}.
+• Producto Líder en Rotación: ${leaderProduct || 'No determinado'}.
+• Producto Menos Vendido: ${sleepingProduct || 'No determinado'}.
+
+=======================================================
+BASE DE DATOS COMPLETA DEL CATÁLOGO (PRODUCTOS Y CIFRAS):
+=======================================================
+${fullCatalog || 'No hay catálogo cargado aún por el usuario.'}
+
+=======================================================
+DIRECTRICES DE RESPUESTA E INTERACCIÓN:
+=======================================================
+1. CONSULTAS DE PRODUCTOS ESPECÍFICOS:
+   - Si el usuario te pregunta por cualquier producto del catálogo (ej: "leche alquería", "atún", "arroz", "detergente"):
+     Busca ese producto en la lista del catálogo provista arriba, analiza sus unidades vendidas, su facturación y su margen, y dale un diagnóstico táctico real (ej: si es un producto gancho, si conviene empaquetarlo, ajustar su precio o usarlo para elevar el ticket promedio).
+
+2. PREGUNTAS FUERA DE TEMA O NO RELACIONADAS:
+   - Si el usuario hace preguntas ajenas (ej: "comprar un pan", temas personales, etc.):
+     Responde de forma amable, ingeniosa y breve, explicando que IntelRetail Pro es una plataforma analítica y de simulación estratégica (no una tienda de venta directa), e invítalo con simpatía a analizar las finanzas o la rotación de sus productos.
+
+3. PREGUNTAS ESTRATÉGICAS Y DE MARKETING:
+   - Entrega sugerencias reales de retail: combos cruzados (bundling), promociones condicionadas al ticket promedio (${avgTicket}), cambios de ubicación en góndola o estrategias de pauta publicitaria multicanal.`;
+
+    const contents: any[] = [];
+
+    if (Array.isArray(history) && history.length > 0) {
+      history.slice(-6).forEach((h: any) => {
+        contents.push({
+          role: h.role === 'assistant' ? 'model' : 'user',
+          parts: [{ text: h.text }],
+        });
       });
     }
 
-    const systemInstruction = `Eres el consultor financiero y director comercial experto de 'IntelRetail Pro'.
-Analiza las métricas retail del usuario y entrega diagnósticos ejecutivos, concisos y accionables con números o viñetas.
-- Moneda activa: ${currency || 'COP'}.
-- Módulo en consulta: ${screen || 'Catálogo'}.
-- Métricas consolidadas: ${dataSummary || 'Sin datos'}.`;
+    contents.push({
+      role: 'user',
+      parts: [{ text: `${systemInstruction}\n\nPregunta del usuario:\n${prompt}` }],
+    });
 
     const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`,
       {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          contents: [
-            {
-              role: 'user',
-              parts: [
-                {
-                  text: `${systemInstruction}\n\nConsulta:\n${prompt}`,
-                },
-              ],
-            },
-          ],
-        }),
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ contents }),
       }
     );
 
     if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
+      const errData = await response.json().catch(() => ({}));
       return NextResponse.json(
-        { response: `Aviso Gemini: ${errorData.error?.message || 'Servicio temporalmente no disponible.'}` },
-        { status: 200 }
+        { error: errData.error?.message || 'Error al conectar con el servicio de IA.' },
+        { status: 500 }
       );
     }
 
     const data = await response.json();
-    const reply =
-      data.candidates?.[0]?.content?.parts?.[0]?.text || 'No se generó respuesta del modelo.';
+    const reply = data.candidates?.[0]?.content?.parts?.[0]?.text || 'No se pudo generar la respuesta.';
 
     return NextResponse.json({ response: reply });
   } catch (error: any) {
-    return NextResponse.json(
-      { response: `Error interno de procesamiento: ${error.message}` },
-      { status: 200 }
-    );
+    return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
