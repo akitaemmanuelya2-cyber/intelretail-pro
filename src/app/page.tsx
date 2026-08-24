@@ -139,7 +139,7 @@ const renderFormattedText = (content: string) => {
   });
 };
 export default function IntelRetailApp() {
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [sidebarWidth, setSidebarWidth] = useState(320);
   const [isResizing, setIsResizing] = useState(false);
 
