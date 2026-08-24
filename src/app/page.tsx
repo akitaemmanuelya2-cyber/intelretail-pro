@@ -149,27 +149,25 @@ export default function IntelRetailApp() {
   const [requirementsOpen, setRequirementsOpen] = useState(true);
   const [showHelpTooltip, setShowHelpTooltip] = useState(false);
 
-  // Estados Módulo Express
-  const [weeklySales, setWeeklySales] = useState<number[]>([
-    1250000, 1200000, 1300000, 1250000, 1250000, 1200000, 1300000, 1250000,
-  ]);
-  const [mixServices, setMixServices] = useState(60);
-  const [marginAvg, setMarginAvg] = useState(5);
-  const [fixedCosts, setFixedCosts] = useState(2400000);
-  const [variableCosts, setVariableCosts] = useState(600000);
-  const [totalCustomers, setTotalCustomers] = useState(700);
+// Estados Módulo Express
+  const [weeklySales, setWeeklySales] = useState<number[]>([0, 0, 0, 0, 0, 0, 0, 0]);
+  const [mixServices, setMixServices] = useState(0);
+  const [marginAvg, setMarginAvg] = useState(0);
+  const [fixedCosts, setFixedCosts] = useState(0);
+  const [variableCosts, setVariableCosts] = useState(0);
+  const [totalCustomers, setTotalCustomers] = useState(0);
 
   // Estados Dataset / Catálogo
   const [rawDataset, setRawDataset] = useState<RawProductRow[]>([]);
   const [costConfig, setCostConfig] = useState<Record<string, number>>({});
-  const [globalCost, setGlobalCost] = useState(70);
+  const [globalCost, setGlobalCost] = useState(0);
   const [deepAnalysisType, setDeepAnalysisType] = useState<'qty' | 'sales' | 'customer'>('qty');
 
   // Estados Simulador
   const [priceAdjustment, setPriceAdjustment] = useState(0);
-  const [adBudget, setAdBudget] = useState(100000);
-  const [leadCost, setLeadCost] = useState(2000);
-  const [conversionRate, setConversionRate] = useState(5);
+  const [adBudget, setAdBudget] = useState(0);
+  const [leadCost, setLeadCost] = useState(0);
+  const [conversionRate, setConversionRate] = useState(0);
   const [scenarioA, setScenarioA] = useState<any>(null);
 
   // Suite Copys IA
@@ -177,10 +175,10 @@ export default function IntelRetailApp() {
   const [tonePromo, setTonePromo] = useState('Comercial y Directo');
 
   // Estados Planificador
-  const [targetProfit, setTargetProfit] = useState(10000000);
+  const [targetProfit, setTargetProfit] = useState(0);
   const [plannerMonths, setPlannerMonths] = useState(1);
-  const [plannerFixedCosts, setPlannerFixedCosts] = useState(1500000);
-  const [maxDailyCapacity, setMaxDailyCapacity] = useState(20);
+  const [plannerFixedCosts, setPlannerFixedCosts] = useState(0);
+  const [maxDailyCapacity, setMaxDailyCapacity] = useState(0);
   const [seasonality, setSeasonality] = useState(0);
   const [rateAdjustment, setRateAdjustment] = useState(0);
 
@@ -189,11 +187,11 @@ export default function IntelRetailApp() {
   const [chatHistory, setChatHistory] = useState<{ role: 'user' | 'assistant'; text: string }[]>([]);
   const [loadingAI, setLoadingAI] = useState(false);
   const [aiNotes, setAiNotes] = useState<string>('');
-// Referencias para auto-scroll independiente
+
+  // Referencias para auto-scroll independiente
   const chatBottomRef = useRef<HTMLDivElement | null>(null);
   const auditNotesContainerRef = useRef<HTMLDivElement | null>(null);
   const simNotesContainerRef = useRef<HTMLDivElement | null>(null);
-
   useEffect(() => {
     chatBottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [chatHistory, loadingAI]);
@@ -956,15 +954,16 @@ const handleSendMessage = async (customPrompt?: string, categoryHeader?: string)
                   <div key={idx}>
                     <label className="text-xs text-[#D1D5DB] block mb-1">Semana {idx + 1}</label>
                     <input
-                      type="number"
-                      value={val}
-                      onChange={(e) => {
-                        const copy = [...weeklySales];
-                        copy[idx] = Number(e.target.value) || 0;
-                        setWeeklySales(copy);
-                      }}
-                      className="w-full bg-[#0C1519] border border-[#724B39]/60 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-[#CF9D7B]"
-                    />
+              type="number"
+              placeholder="0"
+              value={val === 0 ? '' : val}
+              onChange={(e) => {
+                const copy = [...weeklySales];
+                copy[idx] = e.target.value === '' ? 0 : Number(e.target.value);
+                setWeeklySales(copy);
+              }}
+              className="w-full bg-[#0C1519] border border-[#724B39]/60 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-[#CF9D7B]"
+            />
                   </div>
                 ))}
               </div>
@@ -994,21 +993,23 @@ const handleSendMessage = async (customPrompt?: string, categoryHeader?: string)
                 <div className="space-y-1">
                   <label className="text-xs font-bold text-[#CF9D7B] block">Gastos Fijos Acumulados (2 Meses)</label>
                   <input
-                    type="number"
-                    value={fixedCosts}
-                    onChange={(e) => setFixedCosts(Number(e.target.value) || 0)}
-                    className="w-full bg-[#0C1519] border border-[#724B39]/60 rounded-lg px-3 py-2 text-sm text-white"
-                  />
+            type="number"
+            placeholder="0"
+            value={fixedCosts === 0 ? '' : fixedCosts}
+            onChange={(e) => setFixedCosts(e.target.value === '' ? 0 : Number(e.target.value))}
+            className="w-full bg-[#0C1519] border border-[#724B39]/60 rounded-lg px-3 py-2 text-sm text-white"
+          />
                 </div>
 
                 <div className="space-y-1">
                   <label className="text-xs font-bold text-[#CF9D7B] block">Atenciones/Clientes Totales (8 Semanas):</label>
                   <input
-                    type="number"
-                    value={totalCustomers}
-                    onChange={(e) => setTotalCustomers(Number(e.target.value) || 1)}
-                    className="w-full bg-[#0C1519] border border-[#724B39]/60 rounded-lg px-3 py-2 text-sm text-white"
-                  />
+            type="number"
+            placeholder="0"
+            value={totalCustomers === 0 ? '' : totalCustomers}
+            onChange={(e) => setTotalCustomers(e.target.value === '' ? 0 : Number(e.target.value))}
+            className="w-full bg-[#0C1519] border border-[#724B39]/60 rounded-lg px-3 py-2 text-sm text-white"
+          />
                 </div>
               </div>
 
@@ -1018,13 +1019,12 @@ const handleSendMessage = async (customPrompt?: string, categoryHeader?: string)
                     Margen Neto Promedio (%): <span className="text-white font-extrabold">{marginAvg}%</span>
                   </label>
                   <input
-                    type="range"
-                    min="1"
-                    max="100"
-                    value={marginAvg}
-                    onChange={(e) => setMarginAvg(Number(e.target.value))}
-                    className="w-full accent-[#724B39]"
-                  />
+            type="number"
+            placeholder="0"
+            value={variableCosts === 0 ? '' : variableCosts}
+            onChange={(e) => setVariableCosts(e.target.value === '' ? 0 : Number(e.target.value))}
+            className="w-full bg-[#0C1519] border border-[#724B39]/60 rounded-lg px-3 py-2 text-sm text-white"
+          />
                 </div>
 
                 <div className="space-y-1">
@@ -1434,20 +1434,22 @@ const handleSendMessage = async (customPrompt?: string, categoryHeader?: string)
                 <div className="space-y-1">
                   <label className="text-xs text-[#CF9D7B] font-bold block">Presupuesto Pauta ({currency})</label>
                   <input
-                    type="number"
-                    value={adBudget}
-                    onChange={(e) => setAdBudget(Number(e.target.value) || 0)}
-                    className="w-full bg-[#0C1519] border border-[#724B39]/60 rounded-lg px-2.5 py-1.5 text-sm text-white"
-                  />
+            type="number"
+            placeholder="0"
+            value={adBudget === 0 ? '' : adBudget}
+            onChange={(e) => setAdBudget(e.target.value === '' ? 0 : Number(e.target.value))}
+            className="w-full bg-[#0C1519] border border-[#724B39]/60 rounded-lg px-2.5 py-1.5 text-sm text-white"
+          />
                 </div>
                 <div className="space-y-1">
                   <label className="text-xs text-[#CF9D7B] font-bold block">Costo por Mensaje/Contacto ({currency})</label>
                   <input
-                    type="number"
-                    value={leadCost}
-                    onChange={(e) => setLeadCost(Number(e.target.value) || 1)}
-                    className="w-full bg-[#0C1519] border border-[#724B39]/60 rounded-lg px-2.5 py-1.5 text-sm text-white"
-                  />
+            type="number"
+            placeholder="0"
+            value={leadCost === 0 ? '' : leadCost}
+            onChange={(e) => setLeadCost(e.target.value === '' ? 0 : Number(e.target.value))}
+            className="w-full bg-[#0C1519] border border-[#724B39]/60 rounded-lg px-2.5 py-1.5 text-sm text-white"
+          />
                 </div>
                 <div className="space-y-2">
                   <label className="text-xs text-[#CF9D7B] font-bold block">% de Cierre de Ventas: {conversionRate}%</label>
@@ -1681,11 +1683,12 @@ const handleSendMessage = async (customPrompt?: string, categoryHeader?: string)
               <div className="glass-card p-4 rounded-xl space-y-1">
                 <label className="text-xs text-[#CF9D7B] font-bold">Ganancia Deseada ({currency})</label>
                 <input
-                  type="number"
-                  value={targetProfit}
-                  onChange={(e) => setTargetProfit(Number(e.target.value) || 0)}
-                  className="w-full bg-[#0C1519] border border-[#724B39]/60 rounded-lg px-2.5 py-1 text-sm text-white"
-                />
+            type="number"
+            placeholder="0"
+            value={targetProfit === 0 ? '' : targetProfit}
+            onChange={(e) => setTargetProfit(e.target.value === '' ? 0 : Number(e.target.value))}
+            className="w-full bg-[#0C1519] border border-[#724B39]/60 rounded-lg px-2.5 py-1 text-sm text-white"
+          />
               </div>
               <div className="glass-card p-4 rounded-xl space-y-2">
                 <label className="text-xs text-[#CF9D7B] font-bold">Horizonte (Meses): {plannerMonths}</label>
@@ -1701,20 +1704,22 @@ const handleSendMessage = async (customPrompt?: string, categoryHeader?: string)
               <div className="glass-card p-4 rounded-xl space-y-1">
                 <label className="text-xs text-[#CF9D7B] font-bold">Gastos Fijos/Mes ({currency})</label>
                 <input
-                  type="number"
-                  value={plannerFixedCosts}
-                  onChange={(e) => setPlannerFixedCosts(Number(e.target.value) || 0)}
-                  className="w-full bg-[#0C1519] border border-[#724B39]/60 rounded-lg px-2.5 py-1 text-sm text-white"
-                />
+            type="number"
+            placeholder="0"
+            value={plannerFixedCosts === 0 ? '' : plannerFixedCosts}
+            onChange={(e) => setPlannerFixedCosts(e.target.value === '' ? 0 : Number(e.target.value))}
+            className="w-full bg-[#0C1519] border border-[#724B39]/60 rounded-lg px-2.5 py-1 text-sm text-white"
+          />
               </div>
               <div className="glass-card p-4 rounded-xl space-y-1">
                 <label className="text-xs text-[#CF9D7B] font-bold">Tope Operativo Diario</label>
                 <input
-                  type="number"
-                  value={maxDailyCapacity}
-                  onChange={(e) => setMaxDailyCapacity(Number(e.target.value) || 1)}
-                  className="w-full bg-[#0C1519] border border-[#724B39]/60 rounded-lg px-2.5 py-1 text-sm text-white"
-                />
+            type="number"
+            placeholder="0"
+            value={maxDailyCapacity === 0 ? '' : maxDailyCapacity}
+            onChange={(e) => setMaxDailyCapacity(e.target.value === '' ? 0 : Number(e.target.value))}
+            className="w-full bg-[#0C1519] border border-[#724B39]/60 rounded-lg px-2.5 py-1 text-sm text-white"
+          />
               </div>
             </div>
 
