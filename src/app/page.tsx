@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useMemo, useCallback, useEffect } from 'react';
+import React, { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import {
   Zap,
   Search,
@@ -190,6 +190,17 @@ export default function IntelRetailApp() {
   const [chatHistory, setChatHistory] = useState<{ role: 'user' | 'assistant'; text: string }[]>([]);
   const [loadingAI, setLoadingAI] = useState(false);
   const [aiNotes, setAiNotes] = useState<string>('');
+  // Referencias para auto-scroll
+  const chatBottomRef = useRef<HTMLDivElement | null>(null);
+  const notesBottomRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    chatBottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [chatHistory, loadingAI]);
+
+  useEffect(() => {
+    notesBottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [aiNotes]);
 
   const currencySymbol = currency === 'USD' ? 'USD $' : '$';
 
@@ -532,9 +543,10 @@ const handleSendMessage = async (customPrompt?: string, categoryHeader?: string)
     const textToSend = customPrompt || chatInput;
     if (!textToSend.trim()) return;
 
+    // Vaciado inmediato del input y actualización del historial
+    setChatInput('');
     const newHistory = [...chatHistory, { role: 'user' as const, text: textToSend }];
     setChatHistory(newHistory);
-    if (!customPrompt) setChatInput('');
     setLoadingAI(true);
 
     try {
@@ -545,7 +557,6 @@ const handleSendMessage = async (customPrompt?: string, categoryHeader?: string)
       const totalP = datasetTotals?.totalProfit ? `${currencySymbol}${datasetTotals.totalProfit.toLocaleString('es-CO', { maximumFractionDigits: 0 })}` : '$0';
       const avgT = datasetTotals?.avgTicket ? `${currencySymbol}${datasetTotals.avgTicket.toLocaleString('es-CO', { maximumFractionDigits: 0 })}` : '$0';
 
-      // Catálogo estructurado para que la IA conozca todos los productos y métricas
       const fullCatalog = datasetTotals?.groupedList?.map(p => 
         `• ${p.product}: Rotación ${p.quantity} Unds | Ventas ${currencySymbol}${p.sales.toLocaleString('es-CO')} | Ganancia Neta ${currencySymbol}${p.netProfit.toLocaleString('es-CO')}`
       ).join('\n') || 'Sin catálogo cargado aún.';
@@ -572,15 +583,15 @@ const handleSendMessage = async (customPrompt?: string, categoryHeader?: string)
         if (data.response) {
           setChatHistory([...newHistory, { role: 'assistant', text: data.response }]);
           const headerTitle = categoryHeader || (customPrompt ? 'Análisis de Auditoría' : 'Consulta Copiloto');
-          const formattedEntry = `[${headerTitle}]:\n\n${data.response}`;
-          setAiNotes((prev) => (prev ? `${prev}\n\n${formattedEntry}` : formattedEntry));
+          const formattedEntry = `### [${headerTitle}]:\n**Pregunta / Instrucción:** ${textToSend}\n\n**Respuesta de Intelcito:**\n${data.response}`;
+          setAiNotes((prev) => (prev ? `${prev}\n\n---\n\n${formattedEntry}` : formattedEntry));
           setLoadingAI(false);
           return;
         }
       }
 
       const errJson = await res.json().catch(() => ({}));
-      const fallbackMsg = `Aviso del Asesor: No fue posible conectar con el servicio de IA (${errJson.error || 'Verifica la variable GEMINI_API_KEY en Vercel'}). Intenta nuevamente en unos momentos.`;
+      const fallbackMsg = `Aviso de Intelcito: No fue posible conectar con el servicio de IA (${errJson.error || 'Verifica la variable GEMINI_API_KEY en Vercel'}). Intenta nuevamente en unos momentos.`;
       setChatHistory([...newHistory, { role: 'assistant', text: fallbackMsg }]);
     } catch (err: any) {
       setChatHistory([...newHistory, { role: 'assistant', text: 'Error de red al consultar el asistente. Intenta de nuevo.' }]);
@@ -773,16 +784,17 @@ const handleSendMessage = async (customPrompt?: string, categoryHeader?: string)
             ) : (
               chatHistory.map((msg, i) => (
                 <div
-                    key={i}
-                    className={`p-2.5 rounded-lg text-xs leading-relaxed ${
-                      msg.role === 'user' ? 'bg-[#3A3534] text-white ml-2 border border-[#724B39]' : 'bg-[#162127] text-[#D1D5DB] mr-2 border border-[#724B39]/40'
-                    }`}
-                  >
-                    {msg.role === 'user' ? msg.text : renderFormattedText(msg.text)}
-                  </div>
+                  key={i}
+                  className={`p-2.5 rounded-lg text-xs leading-relaxed ${
+                    msg.role === 'user' ? 'bg-[#3A3534] text-white ml-2 border border-[#724B39]' : 'bg-[#162127] text-[#D1D5DB] mr-2 border border-[#724B39]/40'
+                  }`}
+                >
+                  {msg.role === 'user' ? msg.text : renderFormattedText(msg.text)}
+                </div>
               ))
             )}
-            {loadingAI && <p className="text-xs text-[#CF9D7B] animate-pulse">Sintetizando...</p>}
+            {loadingAI && <p className="text-xs text-[#CF9D7B] animate-pulse">Intelcito sintetizando...</p>}
+            <div ref={chatBottomRef} />
           </div>
 
           <div className="pt-2 flex items-center space-x-1.5">
@@ -791,11 +803,16 @@ const handleSendMessage = async (customPrompt?: string, categoryHeader?: string)
               placeholder="Instrucción gerencial..."
               value={chatInput}
               onChange={(e) => setChatInput(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && handleSendMessage(chatInput, 'Consulta Copiloto')}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault();
+                  handleSendMessage();
+                }
+              }}
               className="flex-1 bg-[#162127] border border-[#724B39]/60 rounded-lg px-2.5 py-1.5 text-xs text-white focus:outline-none focus:border-[#CF9D7B]"
             />
             <button
-              onClick={() => handleSendMessage(chatInput, 'Consulta Copiloto')}
+              onClick={() => handleSendMessage()}
               className="btn-interactive p-2 rounded-lg text-[#CF9D7B]"
             >
               <Send className="w-3.5 h-3.5" />
