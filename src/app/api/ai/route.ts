@@ -25,7 +25,7 @@ export async function POST(req: Request) {
       );
     }
 
-    // Arquitectura de 3 Capas: Identidad + Entorno Activo + Nicho del Catálogo
+    // Estructura de 3 Capas: Identidad + Entorno Activo + Nicho del Catálogo
     const systemInstruction = `Eres TARS, el Asesor IA y Consultor Financiero Senior de 'IntelRetail Pro'.
 Actúa como un consultor experto, cercano, estratégico, empático y altamente analítico.
 NUNCA utilices respuestas prefabricadas, clichés robóticos ni guiones rígidos.
@@ -77,8 +77,13 @@ ${fullCatalog || 'Sin catálogo cargado aún.'}
       parts: [{ text: `${systemInstruction}\n\nConsulta del usuario:\n${prompt}` }],
     });
 
-    // Modelos activos en producción para v1beta
-    const modelsToTry = ['gemini-2.5-flash', 'gemini-2.5-flash-lite'];
+    // Modelos activos recomendados por la API de Google
+    const modelsToTry = [
+      'gemini-3.6-flash',
+      'gemini-3.5-flash',
+      'gemini-3.7-flash',
+      'gemini-3.5-flash-lite',
+    ];
     let lastError = null;
     let replyText = null;
 
@@ -108,7 +113,7 @@ ${fullCatalog || 'Sin catálogo cargado aún.'}
 
     if (!replyText) {
       return NextResponse.json(
-        { error: lastError || 'No se pudo conectar con el servicio de Google Gemini.' },
+        { error: lastError || 'No se pudo conectar con los modelos de Google Gemini.' },
         { status: 500 }
       );
     }
