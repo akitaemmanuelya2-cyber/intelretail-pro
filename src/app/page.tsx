@@ -71,16 +71,15 @@ const LargeSphereNode = (props: any) => {
   const { cx, cy, payload } = props;
   if (!cx || !cy) return null;
   return (
-    <g>
+    <g className="cursor-pointer">
       <circle
         cx={cx}
         cy={cy}
-        r={14}
+        r={13}
         fill={payload?.color || '#CF9D7B'}
         stroke="#FFFFFF"
         strokeWidth={2}
-        className="transition-transform duration-200 hover:scale-125 cursor-pointer shadow-lg"
-        style={{ filter: 'drop-shadow(0 2px 6px rgba(0,0,0,0.65))' }}
+        style={{ filter: 'drop-shadow(0 2px 5px rgba(0,0,0,0.6))' }}
       />
       <circle
         cx={cx - 3.5}
@@ -1298,12 +1297,13 @@ const handleSendMessage = async (customPrompt?: string, categoryHeader?: string)
                             label={{ value: 'Ganancia Neta Libre', angle: -90, position: 'insideLeft', offset: -10, fill: '#CF9D7B', fontSize: 12 }}
                           />
                           <Tooltip
-                            cursor={{ strokeDasharray: '3 3' }}
+                            isAnimationActive={false}
+                            cursor={{ strokeDasharray: '3 3', stroke: '#CF9D7B' }}
                             content={({ payload }) => {
                               if (!payload || payload.length === 0) return null;
                               const data = payload[0].payload;
                               return (
-                                <div className="p-3 bg-[#162127] border border-[#724B39] rounded-xl shadow-2xl text-xs space-y-1">
+                                <div className="p-3 bg-[#162127]/95 backdrop-blur-md border border-[#724B39] rounded-xl shadow-2xl text-xs space-y-1 pointer-events-none select-none z-50">
                                   <p className="font-bold text-white flex items-center space-x-1.5">
                                     <span className="w-2.5 h-2.5 rounded-full inline-block" style={{ backgroundColor: data.color }} />
                                     <span>{data.product}</span>
