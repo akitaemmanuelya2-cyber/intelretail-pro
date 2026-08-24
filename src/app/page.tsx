@@ -190,16 +190,32 @@ export default function IntelRetailApp() {
   const [chatHistory, setChatHistory] = useState<{ role: 'user' | 'assistant'; text: string }[]>([]);
   const [loadingAI, setLoadingAI] = useState(false);
   const [aiNotes, setAiNotes] = useState<string>('');
-  // Referencias para auto-scroll
+// Referencias para auto-scroll independiente
   const chatBottomRef = useRef<HTMLDivElement | null>(null);
-  const notesBottomRef = useRef<HTMLDivElement | null>(null);
+  const auditNotesContainerRef = useRef<HTMLDivElement | null>(null);
+  const simNotesContainerRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     chatBottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [chatHistory, loadingAI]);
 
   useEffect(() => {
-    notesBottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+    if (aiNotes) {
+      setTimeout(() => {
+        if (auditNotesContainerRef.current) {
+          auditNotesContainerRef.current.scrollTo({
+            top: auditNotesContainerRef.current.scrollHeight,
+            behavior: 'smooth',
+          });
+        }
+        if (simNotesContainerRef.current) {
+          simNotesContainerRef.current.scrollTo({
+            top: simNotesContainerRef.current.scrollHeight,
+            behavior: 'smooth',
+          });
+        }
+      }, 100);
+    }
   }, [aiNotes]);
 
   const currencySymbol = currency === 'USD' ? 'USD $' : '$';
@@ -1244,8 +1260,12 @@ const handleSendMessage = async (customPrompt?: string, categoryHeader?: string)
                         📄 Mis Apuntes de esta Sesión (Historial)
                       </h4>
                     </div>
-                    <div className="bg-[#0C1519]/90 border border-[#724B39]/40 rounded-xl p-5 text-sm text-[#D1D5DB] font-sans leading-relaxed max-h-96 overflow-y-auto selection:bg-[#724B39] selection:text-white space-y-1">
+                    <div
+                      ref={auditNotesContainerRef}
+                      className="bg-[#0C1519]/90 border border-[#724B39]/40 rounded-xl p-5 text-sm text-[#D1D5DB] font-sans leading-relaxed max-h-96 overflow-y-auto selection:bg-[#724B39] selection:text-white space-y-1"
+                    >
                       {renderFormattedText(aiNotes)}
+                    
                   
                     </div>
                   </div>
@@ -1633,8 +1653,13 @@ const handleSendMessage = async (customPrompt?: string, categoryHeader?: string)
                     📄 Mis Apuntes de esta Sesión (Historial)
                   </h4>
                 </div>
-                <div className="bg-[#0C1519]/90 border border-[#724B39]/40 rounded-xl p-5 text-sm text-[#D1D5DB] font-sans leading-relaxed max-h-96 overflow-y-auto selection:bg-[#724B39] selection:text-white space-y-1">
-                      {renderFormattedText(aiNotes)}
+                <div
+                  ref={simNotesContainerRef}
+                  className="bg-[#0C1519]/90 border border-[#724B39]/40 rounded-xl p-5 text-sm text-[#D1D5DB] font-sans leading-relaxed max-h-96 overflow-y-auto selection:bg-[#724B39] selection:text-white space-y-1"
+                >
+                  {renderFormattedText(aiNotes)}
+                
+                    
                   
                 </div>
               </div>
