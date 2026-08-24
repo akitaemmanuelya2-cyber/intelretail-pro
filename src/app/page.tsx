@@ -92,7 +92,52 @@ const LargeSphereNode = (props: any) => {
     </g>
   );
 };
+// Parsea **texto** a <strong>texto</strong>
+const parseBold = (str: string) => {
+  const parts = str.split(/(\*\*.*?\*\*)/g);
+  return parts.map((part, i) => {
+    if (part.startsWith('**') && part.endsWith('**')) {
+      return <strong key={i} className="font-bold text-white">{part.slice(2, -2)}</strong>;
+    }
+    return part;
+  });
+};
 
+// Función para renderizar Markdown (negritas **, títulos y viñetas) limpiamente sin asteriscos
+const renderFormattedText = (content: string) => {
+  if (!content) return null;
+  const lines = content.split('\n');
+
+  return lines.map((line, idx) => {
+    const trimmed = line.trim();
+    if (!trimmed) return <div key={idx} className="h-2" />;
+
+    // Líneas divisorias ---
+    if (trimmed === '---' || trimmed === '***') {
+      return <hr key={idx} className="my-3 border-[#724B39]/40" />;
+    }
+
+    // Títulos ### o ## o #
+    if (trimmed.startsWith('#')) {
+      const titleText = trimmed.replace(/^#+\s*/, '');
+      return (
+        <h5 key={idx} className="font-bold text-[#CF9D7B] text-sm mt-3 mb-1">
+          {parseBold(titleText)}
+        </h5>
+      );
+    }
+
+    // Viñetas con * o • o -
+    const isBullet = trimmed.startsWith('* ') || trimmed.startsWith('- ') || trimmed.startsWith('• ');
+    const cleanLine = isBullet ? trimmed.replace(/^[\*\-\•]\s*/, '') : trimmed;
+
+    return (
+      <p key={idx} className={`leading-relaxed my-1 ${isBullet ? 'pl-3 relative before:content-["•"] before:absolute before:left-0 before:text-[#CF9D7B]' : ''}`}>
+        {parseBold(cleanLine)}
+      </p>
+    );
+  });
+};
 export default function IntelRetailApp() {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [sidebarWidth, setSidebarWidth] = useState(320);
@@ -728,13 +773,13 @@ const handleSendMessage = async (customPrompt?: string, categoryHeader?: string)
             ) : (
               chatHistory.map((msg, i) => (
                 <div
-                  key={i}
-                  className={`p-2 rounded-lg ${
-                    msg.role === 'user' ? 'bg-[#3A3534] text-white ml-2 border border-[#724B39]' : 'bg-[#162127] text-[#D1D5DB] mr-2 border border-[#724B39]/40'
-                  }`}
-                >
-                  {msg.text}
-                </div>
+                    key={i}
+                    className={`p-2.5 rounded-lg text-xs leading-relaxed ${
+                      msg.role === 'user' ? 'bg-[#3A3534] text-white ml-2 border border-[#724B39]' : 'bg-[#162127] text-[#D1D5DB] mr-2 border border-[#724B39]/40'
+                    }`}
+                  >
+                    {msg.role === 'user' ? msg.text : renderFormattedText(msg.text)}
+                  </div>
               ))
             )}
             {loadingAI && <p className="text-xs text-[#CF9D7B] animate-pulse">Sintetizando...</p>}
@@ -1182,8 +1227,9 @@ const handleSendMessage = async (customPrompt?: string, categoryHeader?: string)
                         📄 Mis Apuntes de esta Sesión (Historial)
                       </h4>
                     </div>
-                    <div className="bg-[#0C1519]/90 border border-[#724B39]/40 rounded-xl p-5 text-sm text-[#F3F4F6] font-sans leading-relaxed whitespace-pre-wrap max-h-96 overflow-y-auto selection:bg-[#724B39] selection:text-white">
-                      {aiNotes}
+                    <div className="bg-[#0C1519]/90 border border-[#724B39]/40 rounded-xl p-5 text-sm text-[#D1D5DB] font-sans leading-relaxed max-h-96 overflow-y-auto selection:bg-[#724B39] selection:text-white space-y-1">
+                      {renderFormattedText(aiNotes)}
+                  
                     </div>
                   </div>
                 )}
@@ -1570,8 +1616,9 @@ const handleSendMessage = async (customPrompt?: string, categoryHeader?: string)
                     📄 Mis Apuntes de esta Sesión (Historial)
                   </h4>
                 </div>
-                <div className="bg-[#0C1519]/90 border border-[#724B39]/40 rounded-xl p-5 text-sm text-[#F3F4F6] font-sans leading-relaxed whitespace-pre-wrap max-h-96 overflow-y-auto selection:bg-[#724B39] selection:text-white">
-                  {aiNotes}
+                <div className="bg-[#0C1519]/90 border border-[#724B39]/40 rounded-xl p-5 text-sm text-[#D1D5DB] font-sans leading-relaxed max-h-96 overflow-y-auto selection:bg-[#724B39] selection:text-white space-y-1">
+                      {renderFormattedText(aiNotes)}
+                  
                 </div>
               </div>
             )}
