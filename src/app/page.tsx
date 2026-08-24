@@ -291,22 +291,40 @@ export default function IntelRetailApp() {
       const newCosts: Record<string, number> = {};
 
       for (let i = 1; i < rawData.length; i++) {
-        const row = rawData[i];
-        if (!row || row.length === 0) continue;
+      const row = rawData[i];
+      if (!row || row.length === 0) continue;
 
-        const prodName = colProd !== -1 && row[colProd] !== undefined ? String(row[colProd]).trim() : 'General';
-        if (!prodName || prodName.toLowerCase().includes('total')) continue;
+      // 1. Extraer nombre real sin asignar 'General' por defecto
+      const rawProdValue = colProd !== -1 && row[colProd] !== undefined && row[colProd] !== null
+        ? String(row[colProd]).trim()
+        : '';
 
-        const rawSales = colSales !== -1 ? parseFloat(String(row[colSales]).replace(/[^0-9.-]+/g, '')) || 0 : 0;
-        const quantity = colQty !== -1 ? parseFloat(String(row[colQty]).replace(/[^0-9.-]+/g, '')) || 1 : 1;
-        const customer = colCust !== -1 && row[colCust] ? String(row[colCust]).trim() : 'Mostrador';
+      // 2. Si la celda de producto está vacía (como la fila de totales de Excel), ignorar
+      if (!rawProdValue) continue;
 
-        if (!(prodName in newCosts)) {
-          newCosts[prodName] = 70;
-        }
-
-        parsedRows.push({ product: prodName, rawSales, quantity, customer });
+      // 3. Cazador de palabras clave de resumen y totales
+      const lowerName = rawProdValue.toLowerCase();
+      if (
+        lowerName === 'total' ||
+        lowerName === 'totales' ||
+        lowerName.startsWith('total ') ||
+        lowerName.includes('gran total') ||
+        lowerName.includes('resumen')
+      ) {
+        continue;
       }
+
+      const prodName = rawProdValue;
+      const rawSales = colSales !== -1 ? parseFloat(String(row[colSales]).replace(/[^0-9.-]+/g, '')) || 0 : 0;
+      const quantity = colQty !== -1 ? parseFloat(String(row[colQty]).replace(/[^0-9.-]+/g, '')) || 1 : 1;
+      const customer = colCust !== -1 && row[colCust] ? String(row[colCust]).trim() : 'Mostrador';
+
+      if (!(prodName in newCosts)) {
+        newCosts[prodName] = 70;
+      }
+
+      parsedRows.push({ product: prodName, rawSales, quantity, customer });
+    }
 
       setCostConfig(newCosts);
       setRawDataset(parsedRows);
