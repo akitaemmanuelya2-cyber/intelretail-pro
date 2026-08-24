@@ -493,74 +493,56 @@ const handleSendMessage = async (customPrompt?: string, categoryHeader?: string)
     setLoadingAI(true);
 
     try {
-      const clientApiKey = process.env.NEXT_PUBLIC_GEMINI_API_KEY;
       const star = datasetTotals?.starProduct?.product || 'Producto Estrella';
       const sleeping = datasetTotals?.sleepingProduct?.product || 'Producto Menos Vendido';
       const leader = datasetTotals?.leaderProduct?.product || 'Producto Líder en Rotación';
       const totalS = datasetTotals?.totalSales ? `${currencySymbol}${datasetTotals.totalSales.toLocaleString('es-CO', { maximumFractionDigits: 0 })}` : '$0';
       const totalP = datasetTotals?.totalProfit ? `${currencySymbol}${datasetTotals.totalProfit.toLocaleString('es-CO', { maximumFractionDigits: 0 })}` : '$0';
       const avgT = datasetTotals?.avgTicket ? `${currencySymbol}${datasetTotals.avgTicket.toLocaleString('es-CO', { maximumFractionDigits: 0 })}` : '$0';
-      const totalRows = dataset.length || 0;
 
-      // Resumen de los primeros productos para darle contexto de nicho al modelo
-      const sampleCatalog = datasetTotals?.groupedList?.slice(0, 8).map(p => `- ${p.product}: ${p.quantity} unds vendidas (${currencySymbol}${p.sales.toLocaleString('es-CO')})`).join('\n') || 'Sin catálogo cargado aún';
+      // Pasamos todo el catálogo consolidado al backend para que conozca todos los productos
+      const fullCatalog = datasetTotals?.groupedList?.map(p => 
+        `• ${p.product}: Rotación ${p.quantity} Unds | Ventas ${currencySymbol}${p.sales.toLocaleString('es-CO')} | Ganancia Neta ${currencySymbol}${p.netProfit.toLocaleString('es-CO')}`
+      ).join('\n') || 'Sin catálogo cargado aún.';
 
-      // 1. CONEXIÓN EN VIVO A GOOGLE GEMINI
-      if (clientApiKey) {
-        const systemInstructionText = `Eres TARS, el Asesor Financiero Senior y Director Comercial de Inteligencia Retail en la plataforma 'IntelRetail Pro'.
-Tu misión es brindar diagnósticos ejecutivos, accionables y con criterio de negocio de alto nivel a cualquier usuario de la plataforma.
+      const res = await fetch('/api/ai', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          prompt: textToSend,
+          history: chatHistory,
+          screen,
+          currency,
+          dataSummary: `Ventas Totales: ${totalS} | Ganancia Neta Libre: ${totalP} | Ticket Promedio: ${avgT}`,
+          starProduct: star,
+          sleepingProduct: sleeping,
+          leaderProduct: leader,
+          avgTicket: avgT,
+          fullCatalog,
+        }),
+      });
 
-CONTEXTO OPERATIVO EN TIEMPO REAL:
-• Módulo activo: ${screen}.
-• Divisa configurada: ${currency}.
-• Métricas globales: Ventas ${totalS} | Utilidad Neta ${totalP} | Ticket Promedio ${avgT} | Registros analizados: ${totalRows}.
-• Producto Estrella (Mayor Utilidad): '${star}'.
-• Producto Líder (Mayor Salida): '${leader}'.
-• Producto Menos Vendido / Dormido: '${sleeping}'.
-• Muestra del catálogo:
-${sampleCatalog}
-
-DIRECTRICES DE COMUNICACIÓN:
-1. Sé 100% conversacional, profesional y humano. NO uses plantillas rígidas ni repitas siempre el mismo texto.
-2. Si el usuario saluda ("hola", "buenos días"), responde cordialmente y menciona brevemente que tienes listas las cifras para optimizar su negocio.
-3. Si el usuario se despide o agradece ("gracias", "chao", "hasta luego"), responde con amabilidad ejecutiva deseándole éxito en sus ventas.
-4. Si el usuario pregunta qué hacer con el producto menos vendido ('${sleeping}') o con cualquier producto en particular, dale un análisis financiero estratégico específico: bundling con el producto estrella ('${star}'), reubicación visual en góndola o estrategias de umbral de ticket promedio (${avgT}).
-5. Adapta tu vocabulario al nicho deducido a partir de los nombres de los productos del catálogo.`;
-
-        // Llamada a la API nativa de Gemini v1beta
-        const response = await fetch(
-          `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${clientApiKey}`,
-          {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              contents: [
-                {
-                  role: 'user',
-                  parts: [
-                    {
-                      text: `${systemInstructionText}\n\nPregunta / Consulta del usuario:\n${textToSend}`
-                    }
-                  ]
-                }
-              ]
-            })
-          }
-        );
-
-        if (response.ok) {
-          const data = await response.json();
-          const reply = data.candidates?.[0]?.content?.parts?.[0]?.text;
-          if (reply) {
-            setChatHistory([...newHistory, { role: 'assistant', text: reply }]);
-            const headerTitle = categoryHeader || (customPrompt ? 'Análisis de Auditoría' : 'Consulta Copiloto');
-            const formattedEntry = `[${headerTitle}]:\n\n${reply}`;
-            setAiNotes((prev) => (prev ? `${prev}\n\n${formattedEntry}` : formattedEntry));
-            setLoadingAI(false);
-            return;
-          }
+      if (res.ok) {
+        const data = await res.json();
+        if (data.response) {
+          setChatHistory([...newHistory, { role: 'assistant', text: data.response }]);
+          const headerTitle = categoryHeader || (customPrompt ? 'Análisis de Auditoría' : 'Consulta Copiloto');
+          const formattedEntry = `[${headerTitle}]:\n\n${data.response}`;
+          setAiNotes((prev) => (prev ? `${prev}\n\n${formattedEntry}` : formattedEntry));
+          setLoadingAI(false);
+          return;
         }
       }
+
+      const errJson = await res.json().catch(() => ({}));
+      const fallbackMsg = `Aviso del Asesor: No fue posible conectar con el servicio de IA (${errJson.error || 'Verifica la variable GEMINI_API_KEY en Vercel'}). Intenta nuevamente en unos momentos.`;
+      setChatHistory([...newHistory, { role: 'assistant', text: fallbackMsg }]);
+    } catch (err: any) {
+      setChatHistory([...newHistory, { role: 'assistant', text: 'Error de red al consultar el asistente. Intenta de nuevo.' }]);
+    } finally {
+      setLoadingAI(false);
+    }
+  };
 
       // 2. RESPUESTA DINÁMICA LOCAL (Solo si no hay internet o clave)
       await new Promise((r) => setTimeout(r, 400));
