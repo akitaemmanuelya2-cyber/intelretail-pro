@@ -91,6 +91,7 @@ const LargeSphereNode = (props: any) => {
     </g>
   );
 };
+
 // Parsea **texto** a <strong>texto</strong>
 const parseBold = (str: string) => {
   const parts = str.split(/(\*\*.*?\*\*)/g);
@@ -137,6 +138,7 @@ const renderFormattedText = (content: string) => {
     );
   });
 };
+
 export default function IntelRetailApp() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [sidebarWidth, setSidebarWidth] = useState(320);
@@ -149,7 +151,7 @@ export default function IntelRetailApp() {
   const [requirementsOpen, setRequirementsOpen] = useState(true);
   const [showHelpTooltip, setShowHelpTooltip] = useState(false);
 
-// Estados Módulo Express
+  // Estados Módulo Express
   const [weeklySales, setWeeklySales] = useState<number[]>([0, 0, 0, 0, 0, 0, 0, 0]);
   const [mixServices, setMixServices] = useState(0);
   const [marginAvg, setMarginAvg] = useState(0);
@@ -192,6 +194,7 @@ export default function IntelRetailApp() {
   const chatBottomRef = useRef<HTMLDivElement | null>(null);
   const auditNotesContainerRef = useRef<HTMLDivElement | null>(null);
   const simNotesContainerRef = useRef<HTMLDivElement | null>(null);
+
   useEffect(() => {
     chatBottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [chatHistory, loadingAI]);
@@ -267,6 +270,7 @@ export default function IntelRetailApp() {
     });
   }, [rawDataset, conversionMultiplier, costConfig]);
 
+  // PARSER BLINDADO CON FILTRO ANTI-TOTALES Y ANTI-VACÍOS
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -291,40 +295,40 @@ export default function IntelRetailApp() {
       const newCosts: Record<string, number> = {};
 
       for (let i = 1; i < rawData.length; i++) {
-      const row = rawData[i];
-      if (!row || row.length === 0) continue;
+        const row = rawData[i];
+        if (!row || row.length === 0) continue;
 
-      // 1. Extraer nombre real sin asignar 'General' por defecto
-      const rawProdValue = colProd !== -1 && row[colProd] !== undefined && row[colProd] !== null
-        ? String(row[colProd]).trim()
-        : '';
+        // 1. Extraer nombre real sin asignar 'General' por defecto
+        const rawProdValue = colProd !== -1 && row[colProd] !== undefined && row[colProd] !== null
+          ? String(row[colProd]).trim()
+          : '';
 
-      // 2. Si la celda de producto está vacía (como la fila de totales de Excel), ignorar
-      if (!rawProdValue) continue;
+        // 2. Si la celda de producto está vacía (como la fila de totales de Excel), ignorar
+        if (!rawProdValue) continue;
 
-      // 3. Cazador de palabras clave de resumen y totales
-      const lowerName = rawProdValue.toLowerCase();
-      if (
-        lowerName === 'total' ||
-        lowerName === 'totales' ||
-        lowerName.startsWith('total ') ||
-        lowerName.includes('gran total') ||
-        lowerName.includes('resumen')
-      ) {
-        continue;
+        // 3. Cazador de palabras clave de resumen y totales
+        const lowerName = rawProdValue.toLowerCase();
+        if (
+          lowerName === 'total' ||
+          lowerName === 'totales' ||
+          lowerName.startsWith('total ') ||
+          lowerName.includes('gran total') ||
+          lowerName.includes('resumen')
+        ) {
+          continue;
+        }
+
+        const prodName = rawProdValue;
+        const rawSales = colSales !== -1 ? parseFloat(String(row[colSales]).replace(/[^0-9.-]+/g, '')) || 0 : 0;
+        const quantity = colQty !== -1 ? parseFloat(String(row[colQty]).replace(/[^0-9.-]+/g, '')) || 1 : 1;
+        const customer = colCust !== -1 && row[colCust] ? String(row[colCust]).trim() : 'Mostrador';
+
+        if (!(prodName in newCosts)) {
+          newCosts[prodName] = 70;
+        }
+
+        parsedRows.push({ product: prodName, rawSales, quantity, customer });
       }
-
-      const prodName = rawProdValue;
-      const rawSales = colSales !== -1 ? parseFloat(String(row[colSales]).replace(/[^0-9.-]+/g, '')) || 0 : 0;
-      const quantity = colQty !== -1 ? parseFloat(String(row[colQty]).replace(/[^0-9.-]+/g, '')) || 1 : 1;
-      const customer = colCust !== -1 && row[colCust] ? String(row[colCust]).trim() : 'Mostrador';
-
-      if (!(prodName in newCosts)) {
-        newCosts[prodName] = 70;
-      }
-
-      parsedRows.push({ product: prodName, rawSales, quantity, customer });
-    }
 
       setCostConfig(newCosts);
       setRawDataset(parsedRows);
@@ -570,7 +574,7 @@ export default function IntelRetailApp() {
     });
   }, [targetProfit, plannerMonths, plannerFixedCosts, maxDailyCapacity, seasonality, rateAdjustment, datasetTotals, dataset]);
 
-const handleSendMessage = async (customPrompt?: string, categoryHeader?: string) => {
+  const handleSendMessage = async (customPrompt?: string, categoryHeader?: string) => {
     const textToSend = customPrompt || chatInput;
     if (!textToSend.trim()) return;
 
@@ -630,6 +634,7 @@ const handleSendMessage = async (customPrompt?: string, categoryHeader?: string)
       setLoadingAI(false);
     }
   };
+
   return (
     <div className="flex min-h-screen bg-transparent text-[#F3F4F6] relative overflow-hidden select-none">
       {/* BOTÓN COLAPSADOR MINIMALISTA */}
@@ -972,16 +977,16 @@ const handleSendMessage = async (customPrompt?: string, categoryHeader?: string)
                   <div key={idx}>
                     <label className="text-xs text-[#D1D5DB] block mb-1">Semana {idx + 1}</label>
                     <input
-              type="number"
-              placeholder="0"
-              value={val === 0 ? '' : val}
-              onChange={(e) => {
-                const copy = [...weeklySales];
-                copy[idx] = e.target.value === '' ? 0 : Number(e.target.value);
-                setWeeklySales(copy);
-              }}
-              className="w-full bg-[#0C1519] border border-[#724B39]/60 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-[#CF9D7B]"
-            />
+                      type="number"
+                      placeholder="0"
+                      value={val === 0 ? '' : val}
+                      onChange={(e) => {
+                        const copy = [...weeklySales];
+                        copy[idx] = e.target.value === '' ? 0 : Number(e.target.value);
+                        setWeeklySales(copy);
+                      }}
+                      className="w-full bg-[#0C1519] border border-[#724B39]/60 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-[#CF9D7B]"
+                    />
                   </div>
                 ))}
               </div>
@@ -994,7 +999,7 @@ const handleSendMessage = async (customPrompt?: string, categoryHeader?: string)
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-                <div className="space-y-2">
+                <div className="space-y-1.5">
                   <label className="text-xs font-bold text-[#CF9D7B] block">
                     % Ingresos por Servicios (vs. Productos físicos): <span className="text-white font-extrabold">{mixServices}%</span>
                   </label>
@@ -1006,78 +1011,94 @@ const handleSendMessage = async (customPrompt?: string, categoryHeader?: string)
                     onChange={(e) => setMixServices(Number(e.target.value))}
                     className="w-full accent-[#724B39]"
                   />
+                  <p className="text-[11px] text-[#D1D5DB]/70 leading-tight">
+                    Proporción de tus ventas provenientes de servicios frente a productos físicos.
+                  </p>
                 </div>
 
-                <div className="space-y-1">
+                <div className="space-y-1.5">
                   <label className="text-xs font-bold text-[#CF9D7B] block">Gastos Fijos Acumulados (2 Meses)</label>
                   <input
-            type="number"
-            placeholder="0"
-            value={fixedCosts === 0 ? '' : fixedCosts}
-            onChange={(e) => setFixedCosts(e.target.value === '' ? 0 : Number(e.target.value))}
-            className="w-full bg-[#0C1519] border border-[#724B39]/60 rounded-lg px-3 py-2 text-sm text-white"
-          />
+                    type="number"
+                    placeholder="0"
+                    value={fixedCosts === 0 ? '' : fixedCosts}
+                    onChange={(e) => setFixedCosts(e.target.value === '' ? 0 : Number(e.target.value))}
+                    className="w-full bg-[#0C1519] border border-[#724B39]/60 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-[#CF9D7B]"
+                  />
+                  <p className="text-[11px] text-[#D1D5DB]/70 leading-tight">
+                    Suma total en 2 meses de arriendo, nómina fija, servicios y administración.
+                  </p>
                 </div>
 
-                <div className="space-y-1">
+                <div className="space-y-1.5">
                   <label className="text-xs font-bold text-[#CF9D7B] block">Atenciones/Clientes Totales (8 Semanas):</label>
                   <input
-            type="number"
-            placeholder="0"
-            value={totalCustomers === 0 ? '' : totalCustomers}
-            onChange={(e) => setTotalCustomers(e.target.value === '' ? 0 : Number(e.target.value))}
-            className="w-full bg-[#0C1519] border border-[#724B39]/60 rounded-lg px-3 py-2 text-sm text-white"
-          />
+                    type="number"
+                    placeholder="0"
+                    value={totalCustomers === 0 ? '' : totalCustomers}
+                    onChange={(e) => setTotalCustomers(e.target.value === '' ? 0 : Number(e.target.value))}
+                    className="w-full bg-[#0C1519] border border-[#724B39]/60 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-[#CF9D7B]"
+                  />
+                  <p className="text-[11px] text-[#D1D5DB]/70 leading-tight">
+                    Cantidad total de ventas, pedidos o atenciones realizadas en el periodo.
+                  </p>
                 </div>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-5 pt-1">
-                <div className="space-y-2">
+                <div className="space-y-1.5">
                   <label className="text-xs font-bold text-[#CF9D7B] block">
                     Margen Neto Promedio (%): <span className="text-white font-extrabold">{marginAvg}%</span>
                   </label>
                   <input
-            type="number"
-            placeholder="0"
-            value={variableCosts === 0 ? '' : variableCosts}
-            onChange={(e) => setVariableCosts(e.target.value === '' ? 0 : Number(e.target.value))}
-            className="w-full bg-[#0C1519] border border-[#724B39]/60 rounded-lg px-3 py-2 text-sm text-white"
-          />
+                    type="number"
+                    placeholder="0"
+                    value={marginAvg === 0 ? '' : marginAvg}
+                    onChange={(e) => setMarginAvg(e.target.value === '' ? 0 : Number(e.target.value))}
+                    className="w-full bg-[#0C1519] border border-[#724B39]/60 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-[#CF9D7B]"
+                  />
+                  <p className="text-[11px] text-[#D1D5DB]/70 leading-tight">
+                    Margen porcentual libre estimado de la operación comercial.
+                  </p>
                 </div>
 
-                <div className="space-y-1">
+                <div className="space-y-1.5">
                   <label className="text-xs font-bold text-[#CF9D7B] block">Costos Variables Estimados (2 Meses)</label>
                   <input
                     type="number"
-                    value={variableCosts}
-                    onChange={(e) => setVariableCosts(Number(e.target.value) || 0)}
-                    className="w-full bg-[#0C1519] border border-[#724B39]/60 rounded-lg px-3 py-2 text-sm text-white"
+                    placeholder="0"
+                    value={variableCosts === 0 ? '' : variableCosts}
+                    onChange={(e) => setVariableCosts(e.target.value === '' ? 0 : Number(e.target.value))}
+                    className="w-full bg-[#0C1519] border border-[#724B39]/60 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-[#CF9D7B]"
                   />
+                  <p className="text-[11px] text-[#D1D5DB]/70 leading-tight">
+                    Costo directo de mercancía, insumos, empaques y comisiones de venta.
+                  </p>
                 </div>
               </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-2">
-              <div className="glass-card p-5 rounded-2xl border-l-4 border-l-[#CF9D7B]">
+              <div className="glass-card p-5 rounded-2xl border-l-4 border-l-[#CF9D7B] space-y-1">
                 <span className="text-xs font-bold text-[#CF9D7B] uppercase">UTILIDAD NETA (8 SEMANAS)</span>
-                <p className="text-2xl font-extrabold text-white mt-1">
+                <p className="text-2xl font-extrabold text-white">
                   {currencySymbol}{expressResults.netProfit.toLocaleString('es-CO', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                 </p>
-                <span className="text-xs text-[#D1D5DB]/80">Ganancia 100% real y libre del periodo.</span>
+                <p className="text-xs text-[#D1D5DB]/80 leading-tight">Ganancia 100% real y libre del periodo tras descontar todos tus costos.</p>
               </div>
-              <div className="glass-card p-5 rounded-2xl border-l-4 border-l-[#724B39]">
+              <div className="glass-card p-5 rounded-2xl border-l-4 border-l-[#724B39] space-y-1">
                 <span className="text-xs font-bold text-[#CF9D7B] uppercase">PUNTO DE EQUILIBRIO BIMESTRAL</span>
-                <p className="text-2xl font-extrabold text-white mt-1">
+                <p className="text-2xl font-extrabold text-white">
                   {currencySymbol}{expressResults.breakEvenPoint.toLocaleString('es-CO', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                 </p>
-                <span className="text-xs text-[#D1D5DB]/80">Venta mínima en 2 meses para no tener pérdidas.</span>
+                <p className="text-xs text-[#D1D5DB]/80 leading-tight">Venta mínima obligatoria en 2 meses para no generar pérdidas operativas.</p>
               </div>
-              <div className="glass-card p-5 rounded-2xl border-l-4 border-l-[#3A3534]">
+              <div className="glass-card p-5 rounded-2xl border-l-4 border-l-[#3A3534] space-y-1">
                 <span className="text-xs font-bold text-[#CF9D7B] uppercase">TICKET PROMEDIO</span>
-                <p className="text-2xl font-extrabold text-white mt-1">
+                <p className="text-2xl font-extrabold text-white">
                   {currencySymbol}{expressResults.avgTicket.toLocaleString('es-CO', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                 </p>
-                <span className="text-xs text-[#D1D5DB]/80">Dinero promedio por cada cliente atendido.</span>
+                <p className="text-xs text-[#D1D5DB]/80 leading-tight">Valor promedio facturado por cada cliente o atención registrada.</p>
               </div>
             </div>
           </div>
@@ -1165,45 +1186,49 @@ const handleSendMessage = async (customPrompt?: string, categoryHeader?: string)
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="glass-card p-5 rounded-2xl">
+                  <div className="glass-card p-5 rounded-2xl space-y-1">
                     <span className="text-xs font-bold text-[#CF9D7B] uppercase">VENTAS TOTALES REGISTRADAS</span>
-                    <p className="text-2xl font-extrabold text-white mt-1">
+                    <p className="text-2xl font-extrabold text-white">
                       {currencySymbol}{datasetTotals?.totalSales.toLocaleString('es-CO', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     </p>
-                    <span className="text-xs text-[#D1D5DB]/80">Suma total de facturación en la base de datos.</span>
+                    <p className="text-xs text-[#D1D5DB]/80 leading-tight">Suma total de todos los ingresos válidos en tu base de datos.</p>
                   </div>
-                  <div className="glass-card p-5 rounded-2xl border-l-4 border-l-[#CF9D7B]">
+                  <div className="glass-card p-5 rounded-2xl border-l-4 border-l-[#CF9D7B] space-y-1">
                     <span className="text-xs font-bold text-[#CF9D7B] uppercase">GANANCIA NETA TOTAL</span>
-                    <p className="text-2xl font-extrabold text-white mt-1">
+                    <p className="text-2xl font-extrabold text-white">
                       {currencySymbol}{datasetTotals?.totalProfit.toLocaleString('es-CO', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     </p>
-                    <span className="text-xs text-[#D1D5DB]/80">Dinero libre después de descontar el costo de producción.</span>
+                    <p className="text-xs text-[#D1D5DB]/80 leading-tight">Dinero libre después de descontar el costo de proveedores y producción.</p>
                   </div>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-4">
-                    <div className="glass-card p-5 rounded-2xl border-l-4 border-l-[#CF9D7B]">
+                    <div className="glass-card p-5 rounded-2xl border-l-4 border-l-[#CF9D7B] space-y-1">
                       <span className="text-xs font-bold text-[#CF9D7B] uppercase">ESTRELLA (MAYOR GANANCIA NETA)</span>
-                      <p className="text-2xl font-extrabold text-white mt-1">{currencySymbol}{datasetTotals?.starProduct?.netProfit.toLocaleString('es-CO', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
-                      <p className="text-sm font-bold text-[#CF9D7B] mt-1">{datasetTotals?.starProduct?.product}</p>
+                      <p className="text-2xl font-extrabold text-white">{currencySymbol}{datasetTotals?.starProduct?.netProfit.toLocaleString('es-CO', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+                      <p className="text-sm font-bold text-[#CF9D7B]">{datasetTotals?.starProduct?.product}</p>
+                      <p className="text-[11px] text-[#D1D5DB]/70 leading-tight">El campeón indiscutible. Es el artículo o servicio que más dinero real deja en tu caja.</p>
                     </div>
-                    <div className="glass-card p-5 rounded-2xl">
+                    <div className="glass-card p-5 rounded-2xl space-y-1">
                       <span className="text-xs font-bold text-[#CF9D7B] uppercase">LÍDER EN ROTACIÓN</span>
-                      <p className="text-2xl font-extrabold text-white mt-1">{datasetTotals?.leaderProduct?.quantity} Unds</p>
-                      <p className="text-sm font-bold text-[#CF9D7B] mt-1">{datasetTotals?.leaderProduct?.product}</p>
+                      <p className="text-2xl font-extrabold text-white">{datasetTotals?.leaderProduct?.quantity} Unds</p>
+                      <p className="text-sm font-bold text-[#CF9D7B]">{datasetTotals?.leaderProduct?.product}</p>
+                      <p className="text-[11px] text-[#D1D5DB]/70 leading-tight">El favorito del público. Es el que más unidades vende y genera flujo comercial recurrente.</p>
                     </div>
                   </div>
 
                   <div className="space-y-4">
-                    <div className="glass-card p-5 rounded-2xl border-l-4 border-l-[#724B39]">
+                    <div className="glass-card p-5 rounded-2xl border-l-4 border-l-[#724B39] space-y-1">
                       <span className="text-xs font-bold text-[#CF9D7B] uppercase">DORMIDO (MENOR ROTACIÓN)</span>
-                      <p className="text-2xl font-extrabold text-white mt-1">{datasetTotals?.sleepingProduct?.quantity} Unds</p>
-                      <p className="text-sm font-bold text-[#CF9D7B] mt-1">{datasetTotals?.sleepingProduct?.product}</p>
+                      <p className="text-2xl font-extrabold text-white">{datasetTotals?.sleepingProduct?.quantity} Unds</p>
+                      <p className="text-sm font-bold text-[#CF9D7B]">{datasetTotals?.sleepingProduct?.product}</p>
+                      <p className="text-[11px] text-[#D1D5DB]/70 leading-tight">¡Alerta roja! Este producto está estancado y tienes capital inmovilizado que requiere estrategia.</p>
                     </div>
-                    <div className="glass-card p-5 rounded-2xl">
+                    <div className="glass-card p-5 rounded-2xl space-y-1">
                       <span className="text-xs font-bold text-[#CF9D7B] uppercase">TICKET PROMEDIO HISTÓRICO</span>
-                      <p className="text-2xl font-extrabold text-white mt-1">{currencySymbol}{datasetTotals?.avgTicket.toLocaleString('es-CO', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+                      <p className="text-2xl font-extrabold text-white">{currencySymbol}{datasetTotals?.avgTicket.toLocaleString('es-CO', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+                      <p className="text-[11px] text-[#D1D5DB]/70 leading-tight">Esta es la facturación media por transacción extraída directamente de tu histórico de ventas.</p>
                     </div>
                   </div>
                 </div>
@@ -1282,8 +1307,6 @@ const handleSendMessage = async (customPrompt?: string, categoryHeader?: string)
                       className="bg-[#0C1519]/90 border border-[#724B39]/40 rounded-xl p-5 text-sm text-[#D1D5DB] font-sans leading-relaxed max-h-96 overflow-y-auto selection:bg-[#724B39] selection:text-white space-y-1"
                     >
                       {renderFormattedText(aiNotes)}
-                    
-                  
                     </div>
                   </div>
                 )}
@@ -1438,7 +1461,7 @@ const handleSendMessage = async (customPrompt?: string, categoryHeader?: string)
               <h3 className="text-sm font-bold uppercase tracking-wider text-[#CF9D7B]">1. Palancas Comerciales:</h3>
 
               <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                <div className="space-y-2">
+                <div className="space-y-1.5">
                   <label className="text-xs text-[#CF9D7B] font-bold block">Ajuste de Precios (%): {priceAdjustment}%</label>
                   <input
                     type="range"
@@ -1448,28 +1471,31 @@ const handleSendMessage = async (customPrompt?: string, categoryHeader?: string)
                     onChange={(e) => setPriceAdjustment(Number(e.target.value))}
                     className="w-full accent-[#724B39]"
                   />
+                  <p className="text-[11px] text-[#D1D5DB]/70 leading-tight">Impacto porcentual de aumento o rebaja en tu catálogo.</p>
                 </div>
-                <div className="space-y-1">
+                <div className="space-y-1.5">
                   <label className="text-xs text-[#CF9D7B] font-bold block">Presupuesto Pauta ({currency})</label>
                   <input
-            type="number"
-            placeholder="0"
-            value={adBudget === 0 ? '' : adBudget}
-            onChange={(e) => setAdBudget(e.target.value === '' ? 0 : Number(e.target.value))}
-            className="w-full bg-[#0C1519] border border-[#724B39]/60 rounded-lg px-2.5 py-1.5 text-sm text-white"
-          />
+                    type="number"
+                    placeholder="0"
+                    value={adBudget === 0 ? '' : adBudget}
+                    onChange={(e) => setAdBudget(e.target.value === '' ? 0 : Number(e.target.value))}
+                    className="w-full bg-[#0C1519] border border-[#724B39]/60 rounded-lg px-2.5 py-1.5 text-sm text-white"
+                  />
+                  <p className="text-[11px] text-[#D1D5DB]/70 leading-tight">Inversión publicitaria digital proyectada para captar prospectos.</p>
                 </div>
-                <div className="space-y-1">
+                <div className="space-y-1.5">
                   <label className="text-xs text-[#CF9D7B] font-bold block">Costo por Mensaje/Contacto ({currency})</label>
                   <input
-            type="number"
-            placeholder="0"
-            value={leadCost === 0 ? '' : leadCost}
-            onChange={(e) => setLeadCost(e.target.value === '' ? 0 : Number(e.target.value))}
-            className="w-full bg-[#0C1519] border border-[#724B39]/60 rounded-lg px-2.5 py-1.5 text-sm text-white"
-          />
+                    type="number"
+                    placeholder="0"
+                    value={leadCost === 0 ? '' : leadCost}
+                    onChange={(e) => setLeadCost(e.target.value === '' ? 0 : Number(e.target.value))}
+                    className="w-full bg-[#0C1519] border border-[#724B39]/60 rounded-lg px-2.5 py-1.5 text-sm text-white"
+                  />
+                  <p className="text-[11px] text-[#D1D5DB]/70 leading-tight">Costo por Lead (CPL) o valor pagado por cada conversación iniciada.</p>
                 </div>
-                <div className="space-y-2">
+                <div className="space-y-1.5">
                   <label className="text-xs text-[#CF9D7B] font-bold block">% de Cierre de Ventas: {conversionRate}%</label>
                   <input
                     type="range"
@@ -1479,6 +1505,7 @@ const handleSendMessage = async (customPrompt?: string, categoryHeader?: string)
                     onChange={(e) => setConversionRate(Number(e.target.value))}
                     className="w-full accent-[#724B39]"
                   />
+                  <p className="text-[11px] text-[#D1D5DB]/70 leading-tight">Porcentaje de contactos potenciales convertidos en compras reales.</p>
                 </div>
               </div>
 
@@ -1564,14 +1591,13 @@ const handleSendMessage = async (customPrompt?: string, categoryHeader?: string)
               </div>
             </div>
 
-            {/* 2. DISTRIBUCIÓN ESTRATÉGICA DE PAUTA (NORMALIZACIÓN A USD & 3 NIVELES REALES) */}
+            {/* 2. DISTRIBUCIÓN ESTRATÉGICA DE PAUTA */}
             <div className="glass-card p-6 rounded-2xl space-y-4">
               <div className="flex items-center space-x-2">
                 <PieIcon className="w-5 h-5 text-[#CF9D7B]" />
                 <h3 className="text-sm font-bold uppercase tracking-wider text-white">2. Distribución Estratégica de Pauta</h3>
               </div>
 
-              {/* Recomendación de Mercado Contextual según Nivel en USD */}
               <div className="p-3.5 rounded-xl bg-[#0C1519]/80 border border-[#724B39]/50 flex items-center space-x-2.5 text-xs text-[#F3F4F6]">
                 <Lightbulb className="w-4 h-4 text-[#CF9D7B] shrink-0" />
                 <span>
@@ -1585,7 +1611,6 @@ const handleSendMessage = async (customPrompt?: string, categoryHeader?: string)
                 </span>
               </div>
 
-              {/* Gráfico Donut o Estado Vacío */}
               {adBudget > 0 ? (
                 <div className="h-72 w-full flex items-center justify-center">
                   <ResponsiveContainer width="100%" height="100%">
@@ -1664,7 +1689,7 @@ const handleSendMessage = async (customPrompt?: string, categoryHeader?: string)
               </button>
             </div>
 
-            {/* CONSOLA DE APUNTES EN EL SIMULADOR CON TIPOGRAFÍA DEL SISTEMA */}
+            {/* CONSOLA DE APUNTES EN EL SIMULADOR */}
             {aiNotes && (
               <div className="glass-card p-6 rounded-2xl space-y-3 border-l-4 border-l-[#CF9D7B]">
                 <div className="flex items-center space-x-2 pb-2 border-b border-[#724B39]/40">
@@ -1678,9 +1703,6 @@ const handleSendMessage = async (customPrompt?: string, categoryHeader?: string)
                   className="bg-[#0C1519]/90 border border-[#724B39]/40 rounded-xl p-5 text-sm text-[#D1D5DB] font-sans leading-relaxed max-h-96 overflow-y-auto selection:bg-[#724B39] selection:text-white space-y-1"
                 >
                   {renderFormattedText(aiNotes)}
-                
-                    
-                  
                 </div>
               </div>
             )}
@@ -1698,17 +1720,18 @@ const handleSendMessage = async (customPrompt?: string, categoryHeader?: string)
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-              <div className="glass-card p-4 rounded-xl space-y-1">
+              <div className="glass-card p-4 rounded-xl space-y-1.5">
                 <label className="text-xs text-[#CF9D7B] font-bold">Ganancia Deseada ({currency})</label>
                 <input
-            type="number"
-            placeholder="0"
-            value={targetProfit === 0 ? '' : targetProfit}
-            onChange={(e) => setTargetProfit(e.target.value === '' ? 0 : Number(e.target.value))}
-            className="w-full bg-[#0C1519] border border-[#724B39]/60 rounded-lg px-2.5 py-1 text-sm text-white"
-          />
+                  type="number"
+                  placeholder="0"
+                  value={targetProfit === 0 ? '' : targetProfit}
+                  onChange={(e) => setTargetProfit(e.target.value === '' ? 0 : Number(e.target.value))}
+                  className="w-full bg-[#0C1519] border border-[#724B39]/60 rounded-lg px-2.5 py-1 text-sm text-white"
+                />
+                <p className="text-[11px] text-[#D1D5DB]/70 leading-tight">Monto neto libre que aspiras ganar en el periodo.</p>
               </div>
-              <div className="glass-card p-4 rounded-xl space-y-2">
+              <div className="glass-card p-4 rounded-xl space-y-1.5">
                 <label className="text-xs text-[#CF9D7B] font-bold">Horizonte (Meses): {plannerMonths}</label>
                 <input
                   type="range"
@@ -1718,33 +1741,36 @@ const handleSendMessage = async (customPrompt?: string, categoryHeader?: string)
                   onChange={(e) => setPlannerMonths(Number(e.target.value))}
                   className="w-full accent-[#724B39]"
                 />
+                <p className="text-[11px] text-[#D1D5DB]/70 leading-tight">Plazo de tiempo estimado para cumplir el objetivo.</p>
               </div>
-              <div className="glass-card p-4 rounded-xl space-y-1">
+              <div className="glass-card p-4 rounded-xl space-y-1.5">
                 <label className="text-xs text-[#CF9D7B] font-bold">Gastos Fijos/Mes ({currency})</label>
                 <input
-            type="number"
-            placeholder="0"
-            value={plannerFixedCosts === 0 ? '' : plannerFixedCosts}
-            onChange={(e) => setPlannerFixedCosts(e.target.value === '' ? 0 : Number(e.target.value))}
-            className="w-full bg-[#0C1519] border border-[#724B39]/60 rounded-lg px-2.5 py-1 text-sm text-white"
-          />
+                  type="number"
+                  placeholder="0"
+                  value={plannerFixedCosts === 0 ? '' : plannerFixedCosts}
+                  onChange={(e) => setPlannerFixedCosts(e.target.value === '' ? 0 : Number(e.target.value))}
+                  className="w-full bg-[#0C1519] border border-[#724B39]/60 rounded-lg px-2.5 py-1 text-sm text-white"
+                />
+                <p className="text-[11px] text-[#D1D5DB]/70 leading-tight">Obligaciones mensuales fijas (arriendo, servicios, sueldos).</p>
               </div>
-              <div className="glass-card p-4 rounded-xl space-y-1">
+              <div className="glass-card p-4 rounded-xl space-y-1.5">
                 <label className="text-xs text-[#CF9D7B] font-bold">Tope Operativo Diario</label>
                 <input
-            type="number"
-            placeholder="0"
-            value={maxDailyCapacity === 0 ? '' : maxDailyCapacity}
-            onChange={(e) => setMaxDailyCapacity(e.target.value === '' ? 0 : Number(e.target.value))}
-            className="w-full bg-[#0C1519] border border-[#724B39]/60 rounded-lg px-2.5 py-1 text-sm text-white"
-          />
+                  type="number"
+                  placeholder="0"
+                  value={maxDailyCapacity === 0 ? '' : maxDailyCapacity}
+                  onChange={(e) => setMaxDailyCapacity(e.target.value === '' ? 0 : Number(e.target.value))}
+                  className="w-full bg-[#0C1519] border border-[#724B39]/60 rounded-lg px-2.5 py-1 text-sm text-white"
+                />
+                <p className="text-[11px] text-[#D1D5DB]/70 leading-tight">Capacidad máxima física de pedidos o atenciones por día.</p>
               </div>
             </div>
 
             <div className="space-y-3 pt-2">
               <h3 className="text-sm font-bold text-white uppercase tracking-wider">Palancas Estratégicas Avanzadas:</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="glass-card p-4 rounded-xl space-y-2">
+                <div className="glass-card p-4 rounded-xl space-y-1.5">
                   <label className="text-xs text-[#CF9D7B] font-bold">🔥 Multiplicador de Temporada Alta (%): {seasonality}%</label>
                   <input
                     type="range"
@@ -1754,8 +1780,9 @@ const handleSendMessage = async (customPrompt?: string, categoryHeader?: string)
                     onChange={(e) => setSeasonality(Number(e.target.value))}
                     className="w-full accent-[#724B39]"
                   />
+                  <p className="text-[11px] text-[#D1D5DB]/70 leading-tight">Proyección de incremento en demanda durante temporadas pico.</p>
                 </div>
-                <div className="glass-card p-4 rounded-xl space-y-2">
+                <div className="glass-card p-4 rounded-xl space-y-1.5">
                   <label className="text-xs text-[#CF9D7B] font-bold">📈 Simulador de Actualización de Tarifas (%): {rateAdjustment}%</label>
                   <input
                     type="range"
@@ -1765,29 +1792,30 @@ const handleSendMessage = async (customPrompt?: string, categoryHeader?: string)
                     onChange={(e) => setRateAdjustment(Number(e.target.value))}
                     className="w-full accent-[#724B39]"
                   />
+                  <p className="text-[11px] text-[#D1D5DB]/70 leading-tight">Ajuste proyectado sobre los precios de venta al cliente.</p>
                 </div>
               </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-2">
-              <div className="glass-card p-5 rounded-2xl border-l-4 border-l-[#CF9D7B]">
+              <div className="glass-card p-5 rounded-2xl border-l-4 border-l-[#CF9D7B] space-y-1">
                 <span className="text-xs font-bold text-[#CF9D7B] uppercase">FACTURACIÓN TOTAL REQUERIDA</span>
-                <p className="text-2xl font-extrabold text-white mt-1">
+                <p className="text-2xl font-extrabold text-white">
                   {currencySymbol}{plannerResults.totalRequiredSales.toLocaleString('es-CO', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                 </p>
-                <span className="text-xs text-[#D1D5DB]/80">Ventas necesarias estimadas en {plannerMonths} mes(es).</span>
+                <p className="text-xs text-[#D1D5DB]/80 leading-tight">Ventas brutas acumuladas necesarias en {plannerMonths} mes(es) para lograr tu meta.</p>
               </div>
-              <div className="glass-card p-5 rounded-2xl border-l-4 border-l-[#724B39]">
+              <div className="glass-card p-5 rounded-2xl border-l-4 border-l-[#724B39] space-y-1">
                 <span className="text-xs font-bold text-[#CF9D7B] uppercase">META DE VENTA DIARIA</span>
-                <p className="text-2xl font-extrabold text-white mt-1">
+                <p className="text-2xl font-extrabold text-white">
                   {currencySymbol}{plannerResults.dailyRequiredSales.toLocaleString('es-CO', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                 </p>
-                <span className="text-xs text-[#D1D5DB]/80">Venta mínima promedio cada día para llegar al objetivo.</span>
+                <p className="text-xs text-[#D1D5DB]/80 leading-tight">Facturación diaria promedio requerida para asegurar el cumplimiento del objetivo.</p>
               </div>
-              <div className={`glass-card p-5 rounded-2xl border-l-4 ${plannerResults.capacityExceeded ? 'border-l-red-600' : 'border-l-[#CF9D7B]'}`}>
+              <div className={`glass-card p-5 rounded-2xl border-l-4 space-y-1 ${plannerResults.capacityExceeded ? 'border-l-red-600' : 'border-l-[#CF9D7B]'}`}>
                 <span className="text-xs font-bold uppercase text-[#CF9D7B]">CLIENTES DIARIOS REQUERIDOS</span>
-                <p className="text-2xl font-extrabold text-white mt-1">{plannerResults.dailyRequiredCustomers} Compras/Día</p>
-                <span className="text-xs text-[#D1D5DB]/80">Límite Operativo configurado: {maxDailyCapacity} atenciones al día.</span>
+                <p className="text-2xl font-extrabold text-white">{plannerResults.dailyRequiredCustomers} Compras/Día</p>
+                <p className="text-xs text-[#D1D5DB]/80 leading-tight">Límite operativo configurado: {maxDailyCapacity} atenciones al día.</p>
               </div>
             </div>
 
