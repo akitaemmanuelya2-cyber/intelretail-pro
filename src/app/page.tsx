@@ -929,9 +929,7 @@ export default function IntelRetailApp() {
                       <div className="p-3.5 rounded-xl bg-[#162127] border border-[#724B39]/50 text-[#CF9D7B] shadow-inner">
                         <Icon className="w-6 h-6" />
                       </div>
-                      <span className="text-[11px] font-bold uppercase tracking-wider text-[#CF9D7B] bg-[#0C1519]/80 px-2.5 py-1 rounded-md border border-[#724B39]/40">
-                        {card.subtitle}
-                      </span>
+                      
                     </div>
 
                     <div className="space-y-1.5">
