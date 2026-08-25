@@ -15,10 +15,18 @@ export interface DiagnosticResult {
 }
 
 export function calculateExpressDiagnostic(inputs: DiagnosticInputs): DiagnosticResult {
-  const totalSales = inputs.weeklySales.reduce((acc, curr) => acc + curr, 0);
-  const netProfit = totalSales * (inputs.marginAvg / 100) - inputs.fixedCosts - inputs.variableCosts;
-  const breakEvenPoint =
-    inputs.marginAvg > 0 ? (inputs.fixedCosts + inputs.variableCosts) / (inputs.marginAvg / 100) : 0;
+  const totalSales = inputs.weeklySales.reduce((acc, curr) => acc + (Number(curr) || 0), 0);
+  
+  // Ponderación de servicios: a mayor proporción de servicios, mayor es el margen efectivo
+  const serviceRatio = Math.min(Math.max((inputs.mixServices || 0) / 100, 0), 1);
+  const baseMarginRatio = Math.min(Math.max((inputs.marginAvg || 0) / 100, 0), 1);
+  
+  const effectiveMargin = baseMarginRatio > 0 
+    ? baseMarginRatio * (1 + serviceRatio * 0.25)
+    : serviceRatio * 0.70;
+
+  const netProfit = totalSales * effectiveMargin - inputs.fixedCosts - inputs.variableCosts;
+  const breakEvenPoint = effectiveMargin > 0 ? (inputs.fixedCosts + inputs.variableCosts) / effectiveMargin : 0;
   const avgTicket = inputs.totalCustomers > 0 ? totalSales / inputs.totalCustomers : 0;
 
   return { totalSales, netProfit, breakEvenPoint, avgTicket };
