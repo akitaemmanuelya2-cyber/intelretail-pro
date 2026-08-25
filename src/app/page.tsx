@@ -522,7 +522,7 @@ export default function IntelRetailApp() {
       conversionRate,
       currentSales: datasetTotals?.totalSales || 0,
       currentQty: datasetTotals?.totalQty || 1,
-      avgCostPercentage: datasetTotals?.avgCostPct || 0.7,
+      avgCostPercentage: datasetTotals?.avgCostPct ?? 0.7,
     });
   }, [priceAdjustment, adBudget, leadCost, conversionRate, datasetTotals]);
 
