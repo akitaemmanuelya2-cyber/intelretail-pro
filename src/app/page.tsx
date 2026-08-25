@@ -878,10 +878,7 @@ export default function IntelRetailApp() {
         {screen === 'home' && (
           <div className="min-h-[85vh] flex flex-col justify-center items-center max-w-5xl mx-auto space-y-10">
             <div className="text-center space-y-3">
-              <div className="inline-flex items-center space-x-2 px-3.5 py-1 rounded-full bg-[#162127]/70 border border-[#724B39]/50 text-xs font-semibold text-[#CF9D7B] mb-2 backdrop-blur-md">
-                <Atom className="w-3.5 h-3.5 animate-spin-fast text-[#CF9D7B]" />
-                <span>Arquitectura React & Turbopack 2026</span>
-              </div>
+              
               <h2 className="text-4xl md:text-5xl font-extrabold text-white tracking-tight">
                 IntelRetail Pro
               </h2>
