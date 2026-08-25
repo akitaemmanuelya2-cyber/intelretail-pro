@@ -1429,12 +1429,32 @@ export default function IntelRetailApp() {
                           tick={{ fontSize: 11, fill: '#D1D5DB' }}
                         />
                         <Tooltip
-                          contentStyle={{ backgroundColor: '#162127', borderColor: '#724B39', borderRadius: '8px' }}
-                          formatter={(value: any) => [
-                            deepAnalysisType === 'qty' ? `${value} Unds` : `${currencySymbol}${Number(value).toLocaleString('es-CO', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
-                            deepAnalysisType === 'qty' ? 'Unidades' : 'Facturación',
-                          ]}
-                        />
+                      isAnimationActive={false}
+                      cursor={{ fill: 'rgba(207, 157, 123, 0.1)' }}
+                      content={({ active, payload }) => {
+                        if (!active || !payload || payload.length === 0) return null;
+                        const data = payload[0].payload;
+                        return (
+                          <div className="p-3 bg-[#162127]/95 backdrop-blur-md border border-[#724B39] rounded-xl shadow-2xl text-xs space-y-1 pointer-events-none select-none z-50">
+                            <p className="font-bold text-white flex items-center space-x-1.5">
+                              <span
+                                className="w-2.5 h-2.5 rounded-full inline-block shrink-0"
+                                style={{ backgroundColor: data.color }}
+                              />
+                              <span>{data.name}</span>
+                            </p>
+                            <p className="text-[#D1D5DB]">
+                              {deepAnalysisType === 'qty' ? 'Unidades' : 'Facturación'}:{' '}
+                              <b className="text-white">
+                                {deepAnalysisType === 'qty'
+                                  ? `${data.value} Unds`
+                                  : `${currencySymbol}${Number(data.value).toLocaleString('es-CO', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
+                              </b>
+                            </p>
+                          </div>
+                        );
+                      }}
+                    />
                         <Bar dataKey="value" radius={[0, 6, 6, 0]}>
                           {deepAnalysisData.map((entry, index) => (
                             <Cell key={`bar-cell-${index}`} fill={entry.color} />
