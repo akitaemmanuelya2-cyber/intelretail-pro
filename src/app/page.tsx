@@ -408,30 +408,39 @@ export default function IntelRetailApp() {
     link.click();
   };
 
-  // Exportar Comparativa de Simulación a Excel
+// Exportar Comparativa de Simulación a Excel
   const downloadSimulationComparisonExcel = () => {
     const currentSales = datasetTotals?.totalSales || 0;
     const currentProfit = datasetTotals?.totalProfit || 0;
     const currentInventoryCost = currentSales - currentProfit;
 
+    const formatCurrency = (val: number | string) => {
+      if (typeof val !== 'number') return val;
+      return new Intl.NumberFormat('es-CO', {
+        style: 'currency',
+        currency: currency === 'USD' ? 'USD' : 'COP',
+        maximumFractionDigits: 2,
+      }).format(val);
+    };
+
     const dataMatrix = [
       ['Métrica / Parámetro', 'Escenario Actual (Realidad)', 'Escenario A (Guardado)', 'Escenario Vivo (Proyección)'],
       ['[ PARÁMETROS ESTRATÉGICOS ]', '', '', ''],
       ['Ajuste de Precios (%)', '0%', scenarioA ? `${scenarioA.priceAdjustment}%` : 'N/A', `${priceAdjustment}%`],
-      [`Presupuesto Pauta (${currency})`, 0, scenarioA ? scenarioA.adBudget : 'N/A', adBudget],
-      [`Costo por Mensaje/Contacto (${currency})`, 'N/A', scenarioA ? scenarioA.leadCost : 'N/A', leadCost],
+      [`Presupuesto Pauta (${currency})`, formatCurrency(0), scenarioA ? formatCurrency(scenarioA.adBudget) : 'N/A', formatCurrency(adBudget)],
+      [`Costo por Mensaje/Contacto (${currency})`, 'N/A', scenarioA ? formatCurrency(scenarioA.leadCost) : 'N/A', formatCurrency(leadCost)],
       ['% de Cierre de Ventas', 'N/A', scenarioA ? `${scenarioA.conversionRate}%` : 'N/A', `${conversionRate}%`],
-      ['Nuevos Clientes Estimados', 'N/A', scenarioA ? scenarioA.newCustomers : 'N/A', simulationResults.newCustomers],
+      ['Nuevos Clientes Estimados', 'N/A', scenarioA ? `${scenarioA.newCustomers} Unds` : 'N/A', `${simulationResults.newCustomers} Unds`],
       ['', '', '', ''],
       ['[ RESULTADOS FINANCIEROS ]', '', '', ''],
-      ['Ventas Totales Brutas', currentSales, scenarioA ? scenarioA.simulatedSales : 'N/A', simulationResults.simulatedSales],
-      ['Costo de Inventario (Estimado)', currentInventoryCost, scenarioA ? (scenarioA.simulatedSales - scenarioA.simulatedProfit - scenarioA.adBudget) : 'N/A', (simulationResults.simulatedSales - simulationResults.simulatedProfit - adBudget)],
-      ['Inversión en Publicidad', 0, scenarioA ? scenarioA.adBudget : 'N/A', adBudget],
-      ['Ganancia Neta Libre', currentProfit, scenarioA ? scenarioA.simulatedProfit : 'N/A', simulationResults.simulatedProfit],
+      ['Ventas Totales Brutas', formatCurrency(currentSales), scenarioA ? formatCurrency(scenarioA.simulatedSales) : 'N/A', formatCurrency(simulationResults.simulatedSales)],
+      ['Costo de Inventario (Estimado)', formatCurrency(currentInventoryCost), scenarioA ? formatCurrency(scenarioA.simulatedSales - scenarioA.simulatedProfit - scenarioA.adBudget) : 'N/A', formatCurrency(simulationResults.simulatedSales - simulationResults.simulatedProfit - adBudget)],
+      ['Inversión en Publicidad', formatCurrency(0), scenarioA ? formatCurrency(scenarioA.adBudget) : 'N/A', formatCurrency(adBudget)],
+      ['Ganancia Neta Libre', formatCurrency(currentProfit), scenarioA ? formatCurrency(scenarioA.simulatedProfit) : 'N/A', formatCurrency(simulationResults.simulatedProfit)],
     ];
 
     const ws = XLSX.utils.aoa_to_sheet(dataMatrix);
-    ws['!cols'] = [{ wch: 35 }, { wch: 28 }, { wch: 28 }, { wch: 28 }];
+    ws['!cols'] = [{ wch: 42 }, { wch: 32 }, { wch: 32 }, { wch: 32 }];
 
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, 'Comparativa_Simulacion');
