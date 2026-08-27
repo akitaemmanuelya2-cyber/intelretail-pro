@@ -133,28 +133,28 @@ body {
   background: #724B39;
 }
 @keyframes cyberGlitchLoop {
-  0%, 88%, 100% {
+  0%, 82%, 100% {
     transform: translate(0);
     text-shadow: none;
     opacity: 1;
   }
-  90% {
+  85% {
     transform: translate(-2px, 1px);
     text-shadow: 2px 0 #fb923c, -2px 0 #38bdf8;
   }
-  92% {
+  88% {
     transform: translate(2px, -1px);
     text-shadow: -2px 0 #fb923c, 2px 0 #38bdf8;
   }
-  94% {
+  91% {
     transform: translate(-1px, 2px);
     text-shadow: 1px 0 #fb923c, -1px 0 #38bdf8;
   }
-  96% {
+  94% {
     transform: translate(1px, -2px);
     text-shadow: -1px 0 #fb923c, 1px 0 #38bdf8;
   }
-  98% {
+  97% {
     transform: translate(0);
     text-shadow: none;
   }
@@ -162,5 +162,5 @@ body {
 
 .animate-auto-glitch {
   display: inline-block;
-  animation: cyberGlitchLoop 5s infinite ease-in-out;
+  animation: cyberGlitchLoop 3s infinite ease-in-out;
 }
