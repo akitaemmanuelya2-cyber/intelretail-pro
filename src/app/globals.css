@@ -132,38 +132,35 @@ body {
 ::-webkit-scrollbar-thumb:hover {
   background: #724B39;
 }
-@keyframes cyberGlitch {
-  0% {
+@keyframes cyberGlitchLoop {
+  0%, 88%, 100% {
     transform: translate(0);
     text-shadow: none;
+    opacity: 1;
   }
-  20% {
+  90% {
     transform: translate(-2px, 1px);
     text-shadow: 2px 0 #fb923c, -2px 0 #38bdf8;
   }
-  40% {
+  92% {
     transform: translate(2px, -1px);
     text-shadow: -2px 0 #fb923c, 2px 0 #38bdf8;
   }
-  60% {
+  94% {
     transform: translate(-1px, 2px);
     text-shadow: 1px 0 #fb923c, -1px 0 #38bdf8;
   }
-  80% {
+  96% {
     transform: translate(1px, -2px);
     text-shadow: -1px 0 #fb923c, 1px 0 #38bdf8;
   }
-  100% {
+  98% {
     transform: translate(0);
     text-shadow: none;
   }
 }
 
-.animate-glitch {
+.animate-auto-glitch {
   display: inline-block;
-  transition: all 0.2s ease-in-out;
-}
-
-.animate-glitch:hover {
-  animation: cyberGlitch 0.4s ease infinite;
+  animation: cyberGlitchLoop 5s infinite ease-in-out;
 }
