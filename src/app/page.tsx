@@ -977,6 +977,8 @@ export default function IntelRetailApp() {
           </footer>
 
         </div>
+      )}
+
 
         {/* DIAGNÓSTICO EXPRESS */}
         {screen === 'express' && (
