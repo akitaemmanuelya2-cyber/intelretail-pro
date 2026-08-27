@@ -950,40 +950,33 @@ export default function IntelRetailApp() {
                       <span>Inicializar Módulo</span>
                       <ArrowRight className="w-4 h-4 transform group-hover:translate-x-1 transition-transform" />
                     </div>
-                  </div>
-                );
-              })}
-            </div>
-            </div>
-    );
-  })}
-</div>
-
-{/* Footer de Créditos del Equipo */}
-<footer className="w-full text-center mt-2">
-  <div className="inline-flex items-center gap-2 px-5 py-2 rounded-full bg-[#161922]/80 border border-[#724B39]/50 backdrop-blur-md shadow-lg shadow-black/40">
-    <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-    <p className="text-xs tracking-wider text-[#D1D5DB] font-mono">
-      Desarrollado por{' '}
-      <span className="text-[#CF9D7B] font-semibold cursor-pointer animate-glitch hover:text-white">
-        Emmanuel Tapasco
-      </span>
-      {', '}
-      <span className="text-[#CF9D7B] font-semibold cursor-pointer animate-glitch hover:text-white">
-        Juan Pablo Hernández
-      </span>
-      {' y '}
-      <span className="text-[#CF9D7B] font-semibold cursor-pointer animate-glitch hover:text-white">
-        Paula Trujillo
-      </span>
-    </p>
-  </div>
-</footer>
-
-</div>
-)}
+                </div>
+              );
+            })}
           </div>
-        )}
+
+          {/* Footer de Créditos del Equipo */}
+          <footer className="w-full text-center mt-6">
+            <div className="inline-flex items-center gap-2 px-5 py-2 rounded-full bg-[#161922]/80 border border-[#724B39]/50 backdrop-blur-md shadow-lg shadow-black/40">
+              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+              <p className="text-xs tracking-wider text-[#D1D5DB] font-mono">
+                Desarrollado por{' '}
+                <span className="text-[#CF9D7B] font-semibold cursor-pointer animate-glitch hover:text-white">
+                  Emmanuel Tapasco
+                </span>
+                {', '}
+                <span className="text-[#CF9D7B] font-semibold cursor-pointer animate-glitch hover:text-white">
+                  Juan Pablo Hernández
+                </span>
+                {' y '}
+                <span className="text-[#CF9D7B] font-semibold cursor-pointer animate-glitch hover:text-white">
+                  Paula Trujillo
+                </span>
+              </p>
+            </div>
+          </footer>
+
+        </div>
 
         {/* DIAGNÓSTICO EXPRESS */}
         {screen === 'express' && (
