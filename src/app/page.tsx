@@ -957,21 +957,15 @@ export default function IntelRetailApp() {
 
           {/* Footer de Créditos del Equipo */}
           <footer className="w-full text-center mt-6">
-            <div className="inline-flex items-center gap-2 px-5 py-2 rounded-full bg-[#161922]/80 border border-[#724B39]/50 backdrop-blur-md shadow-lg shadow-black/40">
-              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-              <p className="text-xs tracking-wider text-[#D1D5DB] font-mono">
+            <div className="flex items-center justify-center gap-2">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+              <p className="text-xs tracking-wider text-[#D1D5DB]/80 font-mono animate-auto-glitch">
                 Desarrollado por{' '}
-                <span className="text-[#CF9D7B] font-semibold cursor-pointer animate-glitch hover:text-white">
-                  Emmanuel Tapasco
-                </span>
+                <span className="text-[#CF9D7B] font-semibold">Emmanuel Tapasco</span>
                 {', '}
-                <span className="text-[#CF9D7B] font-semibold cursor-pointer animate-glitch hover:text-white">
-                  Juan Pablo Hernández
-                </span>
+                <span className="text-[#CF9D7B] font-semibold">Juan Pablo Hernández</span>
                 {' y '}
-                <span className="text-[#CF9D7B] font-semibold cursor-pointer animate-glitch hover:text-white">
-                  Paula Trujillo
-                </span>
+                <span className="text-[#CF9D7B] font-semibold">Paula Trujillo</span>
               </p>
             </div>
           </footer>
